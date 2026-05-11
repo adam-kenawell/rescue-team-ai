@@ -16,3 +16,20 @@ export {
 } from './engine.js';
 export { drawBackground, drawHotspots, drawPlayer, drawAgentPlaceholders, render } from './renderer.js';
 export type { RenderOptions } from './renderer.js';
+export {
+  DIRECTION_ROWS,
+  directionFromDelta,
+  createAgentSpriteState,
+  updateAgentStates,
+  loadSpriteSheets,
+  drawSprite,
+  getCachedSheets,
+  setCachedSheets,
+  clearSheetCache,
+} from './sprites.js';
+export type {
+  DirectionRow,
+  AgentStatus,
+  LoadedSheets,
+  AgentSpriteState,
+} from './sprites.js';

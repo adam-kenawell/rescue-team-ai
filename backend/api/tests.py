@@ -50,6 +50,19 @@ class TestAgentModel:
         assert wigglytuff.shop == "Wigglytuff's Guild"
         assert wigglytuff.tier == "HIGH_REASONING"
 
+    def test_agent_has_dex_id(self):
+        """Every agent should have a positive dex_id."""
+        agent = Agent.objects.create(
+            pokemon="Bulbasaur", role="Test", shop="Test Shop",
+            tier="MID_REASONING", dex_id=1,
+        )
+        assert agent.dex_id == 1
+
+    def test_seed_agents_have_dex_ids(self):
+        """All 8 seed agents should have non-zero dex_ids."""
+        for agent in Agent.objects.all():
+            assert agent.dex_id > 0, f"{agent.pokemon} missing dex_id"
+
     def test_agent_str(self):
         agent = Agent.objects.get(pokemon="Kecleon")
         assert "Kecleon" in str(agent)

@@ -283,6 +283,15 @@ class TestSessionState:
         assert "messages" in data
         assert "session_status" in data
 
+    def test_get_state_agents_include_dex_id(self, client, player):
+        session_id = self._start_session(client, player)
+        resp = client.get(f"/api/session/{session_id}/state/")
+        data = resp.json()
+        for agent in data["agents"]:
+            assert "dex_id" in agent, f"Agent {agent['pokemon']} missing dex_id in poll"
+            assert isinstance(agent["dex_id"], int)
+            assert agent["dex_id"] > 0
+
     def test_get_state_filters_messages_by_since(self, client, player):
         session_id = self._start_session(client, player)
         session = Session.objects.get(pk=session_id)
@@ -356,3 +365,104 @@ class TestEndSession:
             content_type="application/json",
         )
         assert resp.status_code == 201
+
+
+# ── Ack (Partner Walk Sync) ───────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestAckEndpoint:
+    def _start_session(self, client, player):
+        resp = client.post(
+            "/api/session/start/",
+            json.dumps({"player_id": player.pk}),
+            content_type="application/json",
+        )
+        return resp.json()["session_id"]
+
+    def _setup_pending_plan(self, session_id):
+        """Set up a realistic pending plan directly on the session."""
+        session = Session.objects.get(pk=session_id)
+        plan = {
+            "summary": "Test plan",
+            "steps": [
+                {"agent": "Kecleon", "description": "Read file"},
+                {"agent": "Electivire", "description": "Write code"},
+            ],
+        }
+        session.pending_plan = plan
+        session.pending_step_index = 0
+        session.partner_target = "Kecleon"
+        session.save()
+        for step in plan["steps"]:
+            agent = Agent.objects.get(pokemon=step["agent"])
+            SessionAgent.objects.get_or_create(
+                session=session, agent=agent,
+                defaults={"status": SessionAgent.AgentStatus.AWAKE},
+            )
+        return plan
+
+    def test_send_message_sets_partner_target(self, client, player):
+        """After setting up a plan, session should have a partner_target."""
+        session_id = self._start_session(client, player)
+        self._setup_pending_plan(session_id)
+        session = Session.objects.get(pk=session_id)
+        assert session.partner_target != ""
+        assert session.pending_plan is not None
+        assert session.pending_step_index == 0
+
+    def test_ack_executes_step_and_advances(self, client, player):
+        """POSTing to ack/ should execute the current step and advance to the next."""
+        session_id = self._start_session(client, player)
+        self._setup_pending_plan(session_id)
+        session = Session.objects.get(pk=session_id)
+        first_target = session.partner_target
+
+        resp = client.post(f"/api/session/{session_id}/ack/")
+        assert resp.status_code == 200, resp.content
+        data = resp.json()
+
+        assert data["step_completed"] is True
+        assert data["agent"] == first_target
+
+    def test_ack_clears_partner_target_when_done(self, client, player):
+        """When all steps are done, partner_target should be empty."""
+        session_id = self._start_session(client, player)
+        plan = self._setup_pending_plan(session_id)
+        total_steps = len(plan["steps"])
+
+        for _ in range(total_steps):
+            resp = client.post(f"/api/session/{session_id}/ack/")
+            assert resp.status_code == 200
+
+        session = Session.objects.get(pk=session_id)
+        session.refresh_from_db()
+        assert session.partner_target == ""
+        assert session.pending_plan is None
+
+    def test_ack_invalid_session(self, client):
+        resp = client.post("/api/session/9999/ack/")
+        assert resp.status_code == 404
+
+    def test_ack_no_pending_plan(self, client, player):
+        """Ack with no pending plan should return 400."""
+        session_id = self._start_session(client, player)
+        resp = client.post(f"/api/session/{session_id}/ack/")
+        assert resp.status_code == 400
+
+    def test_state_includes_partner_target(self, client, player):
+        """Poll response should include partner_target."""
+        session_id = self._start_session(client, player)
+        self._setup_pending_plan(session_id)
+        resp = client.get(f"/api/session/{session_id}/state/")
+        data = resp.json()
+        assert "partner_target" in data
+
+    def test_end_session_clears_pending_plan(self, client, player):
+        """Ending a session should clear any pending plan."""
+        session_id = self._start_session(client, player)
+        self._setup_pending_plan(session_id)
+        client.post(f"/api/session/{session_id}/end/")
+        session = Session.objects.get(pk=session_id)
+        assert session.pending_plan is None
+        assert session.partner_target == ""

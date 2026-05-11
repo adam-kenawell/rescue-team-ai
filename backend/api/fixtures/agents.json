@@ -7,6 +7,7 @@
       "role": "Planner",
       "shop": "Wigglytuff's Guild",
       "tier": "HIGH_REASONING",
+      "dex_id": 40,
       "model_override": ""
     }
   },
@@ -18,6 +19,7 @@
       "role": "File Navigator",
       "shop": "Kecleon Shop",
       "tier": "FAST_EXECUTION",
+      "dex_id": 352,
       "model_override": ""
     }
   },
@@ -29,6 +31,7 @@
       "role": "Memory/Context",
       "shop": "Kangaskhan Storage",
       "tier": "MID_REASONING",
+      "dex_id": 115,
       "model_override": ""
     }
   },
@@ -40,6 +43,7 @@
       "role": "Git Agent",
       "shop": "Duskull Bank",
       "tier": "MID_REASONING",
+      "dex_id": 355,
       "model_override": ""
     }
   },
@@ -51,6 +55,7 @@
       "role": "Code Writer",
       "shop": "Electivire Link Shop",
       "tier": "HIGH_REASONING",
+      "dex_id": 466,
       "model_override": ""
     }
   },
@@ -62,6 +67,7 @@
       "role": "Terminal Runner",
       "shop": "Marowak Dojo",
       "tier": "FAST_EXECUTION",
+      "dex_id": 105,
       "model_override": ""
     }
   },
@@ -73,6 +79,7 @@
       "role": "Code Reviewer",
       "shop": "Chansey's Day Care",
       "tier": "HIGH_REASONING",
+      "dex_id": 113,
       "model_override": ""
     }
   },
@@ -84,6 +91,7 @@
       "role": "Analyzer/Debugger",
       "shop": "Xatu Appraisal",
       "tier": "MID_REASONING",
+      "dex_id": 178,
       "model_override": ""
     }
   }

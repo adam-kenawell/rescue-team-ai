@@ -101,47 +101,17 @@ def send_message(session_id: int, content: str) -> dict:
             sa.status = SessionAgent.AgentStatus.AWAKE
             sa.save()
 
-    # Dispatch plan steps to shop agents sequentially
-    agent_results = []
-    workspace_path = session.workspace_path
-    for step in plan.steps:
-        try:
-            db_agent = Agent.objects.get(pokemon=step.agent)
-        except Agent.DoesNotExist:
-            continue
-
-        # Update status to thinking
-        SessionAgent.objects.filter(session=session, agent=db_agent).update(
-            status=SessionAgent.AgentStatus.THINKING
-        )
-
-        # Run the shop agent
-        try:
-            shop_agent = get_agent(step.agent, workspace_path, session.pk)
-            with shop_agent.override(model=TestModel()):
-                result = shop_agent.run_sync(step.description)
-            agent_response = result.output
-        except (KeyError, Exception) as e:
-            agent_response = f"Error executing {step.agent}: {e}"
-
-        # Persist agent response
-        Message.objects.create(
-            session=session,
-            role=Message.Role.AGENT,
-            content=agent_response,
-            agent=db_agent,
-        )
-        agent_results.append({"agent": step.agent, "response": agent_response})
-
-        # Update status to done
-        SessionAgent.objects.filter(session=session, agent=db_agent).update(
-            status=SessionAgent.AgentStatus.DONE
-        )
+    # Save plan for step-by-step dispatch (ack-driven)
+    session.pending_plan = plan_dict
+    session.pending_step_index = 0
+    if plan.steps:
+        session.partner_target = plan.steps[0].agent
+    session.save()
 
     return {
         "orchestrator_response": orchestrator_response,
         "plan": plan_dict,
-        "agent_results": agent_results,
+        "partner_target": session.partner_target,
     }
 
 
@@ -160,6 +130,7 @@ def get_session_state(session_id: int, since: str | None = None) -> dict:
             "role": sa.agent.role,
             "shop": sa.agent.shop,
             "status": sa.status,
+            "dex_id": sa.agent.dex_id,
         })
 
     # Messages, optionally filtered by since
@@ -188,6 +159,80 @@ def get_session_state(session_id: int, since: str | None = None) -> dict:
         "session_status": session.status,
         "agents": agents,
         "messages": messages,
+        "partner_target": session.partner_target,
+    }
+
+
+def ack_step(session_id: int) -> dict:
+    """Acknowledge partner walk completion, execute current step, advance to next."""
+    try:
+        session = Session.objects.get(pk=session_id)
+    except Session.DoesNotExist:
+        raise SessionError("Session not found", 404)
+
+    if session.pending_plan is None:
+        raise SessionError("No pending plan to acknowledge", 400)
+
+    plan_steps = session.pending_plan.get("steps", [])
+    idx = session.pending_step_index
+
+    if idx >= len(plan_steps):
+        raise SessionError("All steps already completed", 400)
+
+    step = plan_steps[idx]
+    agent_pokemon = step["agent"]
+    description = step["description"]
+
+    # Execute the step
+    try:
+        db_agent = Agent.objects.get(pokemon=agent_pokemon)
+    except Agent.DoesNotExist:
+        raise SessionError(f"Agent {agent_pokemon} not found", 404)
+
+    # Update status to thinking
+    SessionAgent.objects.filter(session=session, agent=db_agent).update(
+        status=SessionAgent.AgentStatus.THINKING
+    )
+
+    # Run the shop agent
+    try:
+        shop_agent = get_agent(agent_pokemon, session.workspace_path, session.pk)
+        with shop_agent.override(model=TestModel()):
+            result = shop_agent.run_sync(description)
+        agent_response = result.output
+    except (KeyError, Exception) as e:
+        agent_response = f"Error executing {agent_pokemon}: {e}"
+
+    # Persist agent response
+    Message.objects.create(
+        session=session,
+        role=Message.Role.AGENT,
+        content=agent_response,
+        agent=db_agent,
+    )
+
+    # Update status to done
+    SessionAgent.objects.filter(session=session, agent=db_agent).update(
+        status=SessionAgent.AgentStatus.DONE
+    )
+
+    # Advance to next step
+    next_idx = idx + 1
+    if next_idx < len(plan_steps):
+        session.pending_step_index = next_idx
+        session.partner_target = plan_steps[next_idx]["agent"]
+    else:
+        # All steps done
+        session.pending_plan = None
+        session.pending_step_index = 0
+        session.partner_target = ""
+    session.save()
+
+    return {
+        "step_completed": True,
+        "agent": agent_pokemon,
+        "response": agent_response,
+        "done": next_idx >= len(plan_steps),
     }
 
 
@@ -203,6 +248,9 @@ def end_session(session_id: int) -> Session:
 
     session.status = Session.Status.COMPLETED
     session.ended_at = timezone.now()
+    session.pending_plan = None
+    session.pending_step_index = 0
+    session.partner_target = ""
     session.save()
 
     # Set all session agents to done

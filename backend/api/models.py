@@ -26,6 +26,7 @@ class Agent(models.Model):
     role = models.CharField(max_length=100)
     shop = models.CharField(max_length=100)
     tier = models.CharField(max_length=20, choices=Tier.choices)
+    dex_id = models.PositiveIntegerField(default=0)
     model_override = models.CharField(max_length=100, blank=True, default="")
 
     def __str__(self):
@@ -43,6 +44,9 @@ class Session(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="sessions")
     workspace_path = models.CharField(max_length=500, default="")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    pending_plan = models.JSONField(null=True, blank=True, default=None)
+    pending_step_index = models.PositiveIntegerField(default=0)
+    partner_target = models.CharField(max_length=50, blank=True, default="")
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
 

@@ -6,7 +6,7 @@ from django.http import JsonResponse, HttpRequest
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 
-from .services import start_session, send_message, get_session_state, end_session, SessionError
+from .services import start_session, send_message, get_session_state, end_session, ack_step, SessionError
 
 
 @csrf_exempt
@@ -70,3 +70,14 @@ def end_session_view(request: HttpRequest, session_id: int) -> JsonResponse:
         return JsonResponse({"error": e.message}, status=e.status_code)
 
     return JsonResponse({"status": "completed"})
+
+
+@csrf_exempt
+@require_POST
+def ack_view(request: HttpRequest, session_id: int) -> JsonResponse:
+    try:
+        result = ack_step(session_id)
+    except SessionError as e:
+        return JsonResponse({"error": e.message}, status=e.status_code)
+
+    return JsonResponse(result)

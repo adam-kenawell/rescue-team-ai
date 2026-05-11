@@ -1,12 +1,20 @@
-// Map renderer — draws backgrounds, hotspots, player sprite on a 2D canvas
-// Real sprite integration with pmd-visualizer happens in CP7
+// Map renderer — draws backgrounds, hotspots, player + agent sprites on a 2D canvas
 
-import type { MapState, Hotspot } from './types.js';
+import type { MapState } from './types.js';
 import { getScreen } from './screens.js';
+import {
+  type AgentSpriteState,
+  getCachedSheets,
+  drawSprite,
+} from './sprites.js';
 
 export interface RenderOptions {
   /** Show hotspot debug outlines */
   debugHotspots?: boolean;
+  /** Agent sprite states (keyed by pokemon name) */
+  agentStates?: Map<string, AgentSpriteState>;
+  /** Player sprite state (for real sprite rendering) */
+  playerSpriteState?: AgentSpriteState;
 }
 
 /** Draw the current screen background (placeholder solid color) */
@@ -30,8 +38,22 @@ export function drawHotspots(ctx: CanvasRenderingContext2D, screenId: string): v
   }
 }
 
-/** Draw player as a placeholder circle (real sprite rendering in CP7) */
-export function drawPlayer(ctx: CanvasRenderingContext2D, state: MapState): void {
+/**
+ * Draw the player sprite. Uses real sprite if playerSpriteState is provided
+ * and sheets are cached, otherwise falls back to a yellow circle.
+ */
+export function drawPlayer(
+  ctx: CanvasRenderingContext2D,
+  state: MapState,
+  playerSpriteState?: AgentSpriteState,
+): void {
+  if (playerSpriteState) {
+    playerSpriteState.position = { ...state.playerPosition };
+    const loaded = getCachedSheets(playerSpriteState.dexId);
+    drawSprite(ctx, playerSpriteState, loaded);
+    return;
+  }
+  // Fallback circle
   ctx.beginPath();
   ctx.arc(state.playerPosition.x, state.playerPosition.y, 12, 0, Math.PI * 2);
   ctx.fillStyle = '#ffcc00';
@@ -41,30 +63,46 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, state: MapState): void
   ctx.stroke();
 }
 
-/** Draw shop agent placeholders at their walkTo positions */
-export function drawAgentPlaceholders(ctx: CanvasRenderingContext2D, screenId: string): void {
+/**
+ * Draw shop agent sprites. Uses real sprites from agentStates if available,
+ * otherwise falls back to labeled circles.
+ */
+export function drawAgentPlaceholders(
+  ctx: CanvasRenderingContext2D,
+  screenId: string,
+  agentStates?: Map<string, AgentSpriteState>,
+): void {
   const screen = getScreen(screenId);
   for (const hotspot of screen.hotspots) {
     if (hotspot.kind !== 'shop' || !hotspot.agentPokemon) continue;
-    const { x, y } = hotspot.walkTo;
-    ctx.beginPath();
-    ctx.arc(x, y - 20, 10, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(100,200,255,0.7)';
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = '9px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(hotspot.agentPokemon, x, y - 35);
-    ctx.textAlign = 'start';
+    const key = hotspot.agentPokemon.toLowerCase();
+    const agentState = agentStates?.get(key);
+
+    if (agentState) {
+      agentState.position = { ...hotspot.walkTo };
+      const loaded = getCachedSheets(agentState.dexId);
+      drawSprite(ctx, agentState, loaded);
+    } else {
+      const { x, y } = hotspot.walkTo;
+      ctx.beginPath();
+      ctx.arc(x, y - 20, 10, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(100,200,255,0.7)';
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(hotspot.agentPokemon, x, y - 35);
+      ctx.textAlign = 'start';
+    }
   }
 }
 
 /** Full render pass */
 export function render(ctx: CanvasRenderingContext2D, state: MapState, opts: RenderOptions = {}): void {
   drawBackground(ctx, state.currentScreenId);
-  drawAgentPlaceholders(ctx, state.currentScreenId);
+  drawAgentPlaceholders(ctx, state.currentScreenId, opts.agentStates);
   if (opts.debugHotspots) {
     drawHotspots(ctx, state.currentScreenId);
   }
-  drawPlayer(ctx, state);
+  drawPlayer(ctx, state, opts.playerSpriteState);
 }
