@@ -8,6 +8,7 @@ from api.models import Player, Agent, Session, SessionAgent, Message
 from api.agents.orchestrator import create_orchestrator
 from api.agents.planner import planner_agent
 from api.agents.schemas import TaskPlan
+from api.agents.registry import get_agent
 from config.constants import MAX_MESSAGES_PER_SESSION, MAX_AGENT_CALLS_PER_MESSAGE
 
 from pydantic_ai.models.test import TestModel
@@ -22,7 +23,7 @@ class SessionError(Exception):
         super().__init__(message)
 
 
-def start_session(player_id: int) -> Session:
+def start_session(player_id: int, workspace_path: str = "") -> Session:
     """Create a new session for a player. Raises SessionError if invalid."""
     try:
         player = Player.objects.get(pk=player_id)
@@ -33,7 +34,7 @@ def start_session(player_id: int) -> Session:
     if Session.objects.filter(player=player, status=Session.Status.ACTIVE).exists():
         raise SessionError("Player already has an active session", 409)
 
-    return Session.objects.create(player=player)
+    return Session.objects.create(player=player, workspace_path=workspace_path)
 
 
 def send_message(session_id: int, content: str) -> dict:
@@ -100,9 +101,47 @@ def send_message(session_id: int, content: str) -> dict:
             sa.status = SessionAgent.AgentStatus.AWAKE
             sa.save()
 
+    # Dispatch plan steps to shop agents sequentially
+    agent_results = []
+    workspace_path = session.workspace_path
+    for step in plan.steps:
+        try:
+            db_agent = Agent.objects.get(pokemon=step.agent)
+        except Agent.DoesNotExist:
+            continue
+
+        # Update status to thinking
+        SessionAgent.objects.filter(session=session, agent=db_agent).update(
+            status=SessionAgent.AgentStatus.THINKING
+        )
+
+        # Run the shop agent
+        try:
+            shop_agent = get_agent(step.agent, workspace_path, session.pk)
+            with shop_agent.override(model=TestModel()):
+                result = shop_agent.run_sync(step.description)
+            agent_response = result.output
+        except (KeyError, Exception) as e:
+            agent_response = f"Error executing {step.agent}: {e}"
+
+        # Persist agent response
+        Message.objects.create(
+            session=session,
+            role=Message.Role.AGENT,
+            content=agent_response,
+            agent=db_agent,
+        )
+        agent_results.append({"agent": step.agent, "response": agent_response})
+
+        # Update status to done
+        SessionAgent.objects.filter(session=session, agent=db_agent).update(
+            status=SessionAgent.AgentStatus.DONE
+        )
+
     return {
         "orchestrator_response": orchestrator_response,
         "plan": plan_dict,
+        "agent_results": agent_results,
     }
 
 

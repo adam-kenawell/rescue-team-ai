@@ -41,6 +41,7 @@ class Session(models.Model):
         CANCELLED = "cancelled"
 
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="sessions")
+    workspace_path = models.CharField(max_length=500, default="")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
@@ -90,3 +91,19 @@ class Message(models.Model):
 
     def __str__(self):
         return f"[{self.role}] {self.content[:50]}"
+
+
+class SessionSummary(models.Model):
+    """A compacted summary of a range of session messages."""
+
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="summaries")
+    content = models.TextField()
+    message_range_start = models.IntegerField()  # PK of first message covered
+    message_range_end = models.IntegerField()  # PK of last message covered
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Summary for Session {self.session.pk} (msgs {self.message_range_start}-{self.message_range_end})"

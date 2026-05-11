@@ -21,8 +21,10 @@ def start_session_view(request: HttpRequest) -> JsonResponse:
     if player_id is None:
         return JsonResponse({"error": "player_id is required"}, status=400)
 
+    workspace_path = body.get("workspace_path", "")
+
     try:
-        session = start_session(player_id)
+        session = start_session(player_id, workspace_path)
     except SessionError as e:
         return JsonResponse({"error": e.message}, status=e.status_code)
 

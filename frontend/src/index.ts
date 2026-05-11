@@ -1,2 +1,2 @@
 // Rescue Team AI — Frontend entry point
-export {};
+export * from './map/index.js';
