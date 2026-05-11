@@ -1,0 +1,20 @@
+{
+  "name": "rescue-team-ai-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "htmx.org": "^2.0.10",
+    "pmd-visualizer": "file:../../pmd-visualizer"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}
