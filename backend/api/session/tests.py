@@ -466,3 +466,111 @@ class TestAckEndpoint:
         session = Session.objects.get(pk=session_id)
         assert session.pending_plan is None
         assert session.partner_target == ""
+
+
+# ── LLM Failure Handling ──────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestLLMFailureHandling:
+    """Verify graceful error handling when LLM calls fail."""
+
+    def _start_session(self, client, player):
+        resp = client.post(
+            "/api/session/start/",
+            json.dumps({"player_id": player.pk}),
+            content_type="application/json",
+        )
+        return resp.json()["session_id"]
+
+    def _setup_pending_plan(self, session_id, agent_name="Kecleon"):
+        session = Session.objects.get(pk=session_id)
+        plan = {
+            "summary": "Test plan",
+            "steps": [{"agent": agent_name, "description": "Do something"}],
+        }
+        session.pending_plan = plan
+        session.pending_step_index = 0
+        session.partner_target = agent_name
+        session.save()
+        agent = Agent.objects.get(pokemon=agent_name)
+        SessionAgent.objects.get_or_create(
+            session=session, agent=agent,
+            defaults={"status": SessionAgent.AgentStatus.AWAKE},
+        )
+        return plan
+
+    def test_ack_agent_failure_sets_error_status(self, client, player, monkeypatch):
+        """When a shop agent raises, agent status should be 'error'."""
+        session_id = self._start_session(client, player)
+        self._setup_pending_plan(session_id)
+
+        from api.agents import registry
+        def _exploding_agent(*args, **kwargs):
+            raise RuntimeError("LLM provider timeout")
+        monkeypatch.setattr(registry, "get_agent", _exploding_agent)
+
+        resp = client.post(f"/api/session/{session_id}/ack/")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["step_completed"] is True
+
+        session = Session.objects.get(pk=session_id)
+        agent = Agent.objects.get(pokemon="Kecleon")
+        sa = SessionAgent.objects.get(session=session, agent=agent)
+        assert sa.status == "error"
+
+    def test_ack_agent_failure_persists_error_message(self, client, player, monkeypatch):
+        """When a shop agent raises, an error message should be persisted."""
+        session_id = self._start_session(client, player)
+        self._setup_pending_plan(session_id)
+
+        from api.agents import registry
+        def _exploding_agent(*args, **kwargs):
+            raise RuntimeError("LLM provider timeout")
+        monkeypatch.setattr(registry, "get_agent", _exploding_agent)
+
+        client.post(f"/api/session/{session_id}/ack/")
+        session = Session.objects.get(pk=session_id)
+        error_msg = session.messages.filter(role=Message.Role.AGENT).last()
+        assert error_msg is not None
+        assert "ran into trouble" in error_msg.content.lower()
+
+    def test_ack_agent_failure_still_advances_plan(self, client, player, monkeypatch):
+        """Even on agent failure, the plan should advance to the next step."""
+        session_id = self._start_session(client, player)
+        session = Session.objects.get(pk=session_id)
+        plan = {
+            "summary": "Multi-step plan",
+            "steps": [
+                {"agent": "Kecleon", "description": "Read file"},
+                {"agent": "Electivire", "description": "Write code"},
+            ],
+        }
+        session.pending_plan = plan
+        session.pending_step_index = 0
+        session.partner_target = "Kecleon"
+        session.save()
+        for step in plan["steps"]:
+            agent = Agent.objects.get(pokemon=step["agent"])
+            SessionAgent.objects.get_or_create(
+                session=session, agent=agent,
+                defaults={"status": SessionAgent.AgentStatus.AWAKE},
+            )
+
+        from api.agents import registry
+        _call_count = {"n": 0}
+        _original = registry.get_agent
+        def _fail_first(*args, **kwargs):
+            _call_count["n"] += 1
+            if _call_count["n"] == 1:
+                raise RuntimeError("boom")
+            return _original(*args, **kwargs)
+        monkeypatch.setattr(registry, "get_agent", _fail_first)
+
+        # First ack fails but should advance
+        resp = client.post(f"/api/session/{session_id}/ack/")
+        assert resp.status_code == 200
+        session.refresh_from_db()
+        assert session.pending_step_index == 1
+        assert session.partner_target == "Electivire"

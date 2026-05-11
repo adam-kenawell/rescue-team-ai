@@ -62,6 +62,7 @@ class SessionAgent(models.Model):
         AWAKE = "awake"
         THINKING = "thinking"
         DONE = "done"
+        ERROR = "error"
 
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="session_agents")
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="session_agents")

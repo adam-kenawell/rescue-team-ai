@@ -61,11 +61,22 @@ def send_message(session_id: int, content: str) -> dict:
     partner_pokemon = session.player.partner_pokemon
     orchestrator = create_orchestrator(partner_pokemon)
 
-    # Use TestModel for now — will be swapped for real model via config later
-    with orchestrator.override(model=TestModel()):
-        orch_result = orchestrator.run_sync(content)
+    try:
+        # Use TestModel for now — will be swapped for real model via config later
+        with orchestrator.override(model=TestModel()):
+            orch_result = orchestrator.run_sync(content)
+        orchestrator_response = orch_result.output
+    except Exception as e:
+        orchestrator_response = (
+            f"{partner_pokemon} ran into trouble and couldn't process that: {e}"
+        )
+        Message.objects.create(
+            session=session,
+            role=Message.Role.ORCHESTRATOR,
+            content=orchestrator_response,
+        )
+        return {"orchestrator_response": orchestrator_response, "plan": None, "partner_target": ""}
 
-    orchestrator_response = orch_result.output
     Message.objects.create(
         session=session,
         role=Message.Role.ORCHESTRATOR,
@@ -73,10 +84,18 @@ def send_message(session_id: int, content: str) -> dict:
     )
 
     # Run planner (Wigglytuff) to generate a task plan
-    with planner_agent.override(model=TestModel()):
-        plan_result = planner_agent.run_sync(content)
-
-    plan: TaskPlan = plan_result.output
+    try:
+        with planner_agent.override(model=TestModel()):
+            plan_result = planner_agent.run_sync(content)
+        plan: TaskPlan = plan_result.output
+    except Exception as e:
+        error_msg = f"Wigglytuff ran into trouble planning the task: {e}"
+        Message.objects.create(
+            session=session,
+            role=Message.Role.ORCHESTRATOR,
+            content=error_msg,
+        )
+        return {"orchestrator_response": orchestrator_response, "plan": None, "partner_target": ""}
 
     # Persist plan as orchestrator message
     plan_dict = plan.model_dump()
@@ -195,13 +214,18 @@ def ack_step(session_id: int) -> dict:
     )
 
     # Run the shop agent
+    agent_failed = False
     try:
         shop_agent = get_agent(agent_pokemon, session.workspace_path, session.pk)
         with shop_agent.override(model=TestModel()):
             result = shop_agent.run_sync(description)
         agent_response = result.output
-    except (KeyError, Exception) as e:
-        agent_response = f"Error executing {agent_pokemon}: {e}"
+    except Exception as e:
+        agent_failed = True
+        agent_response = f"{agent_pokemon} ran into trouble and couldn't complete the task: {e}"
+        SessionAgent.objects.filter(session=session, agent=db_agent).update(
+            status=SessionAgent.AgentStatus.ERROR
+        )
 
     # Persist agent response
     Message.objects.create(
@@ -211,10 +235,11 @@ def ack_step(session_id: int) -> dict:
         agent=db_agent,
     )
 
-    # Update status to done
-    SessionAgent.objects.filter(session=session, agent=db_agent).update(
-        status=SessionAgent.AgentStatus.DONE
-    )
+    # Update status to done (only on success)
+    if not agent_failed:
+        SessionAgent.objects.filter(session=session, agent=db_agent).update(
+            status=SessionAgent.AgentStatus.DONE
+        )
 
     # Advance to next step
     next_idx = idx + 1
