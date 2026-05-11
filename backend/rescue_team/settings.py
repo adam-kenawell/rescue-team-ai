@@ -64,5 +64,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_URL = "static/"
 STATICFILES_DIRS = [ROOT_DIR / "frontend" / "dist"]
 
+TIME_ZONE = "UTC"
+USE_TZ = True
+
 # LLM Config
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "anthropic")
