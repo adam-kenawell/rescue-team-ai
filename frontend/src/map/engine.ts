@@ -1,7 +1,9 @@
 // Map engine — state management, hotspot detection, walk interpolation, screen transitions
 
-import type { MapState, Position, Hotspot, WalkState } from './types.js';
+import type { MapState, Position, Hotspot, WalkState, FadeState } from './types.js';
 import { getScreen, WALK_SPEED } from './screens.js';
+
+const FADE_DURATION = 250; // ms per phase (out + in)
 
 /** Create initial map state */
 export function createMapState(playerDexId: number, startScreen = 'sharpedo_bluff'): MapState {
@@ -11,6 +13,7 @@ export function createMapState(playerDexId: number, startScreen = 'sharpedo_bluf
     playerPosition: { ...screen.defaultSpawn },
     playerDexId,
     walk: null,
+    fade: null,
   };
 }
 
@@ -77,6 +80,54 @@ export function transitionScreen(state: MapState, targetScreenId: string, spawnP
   state.walk = null;
 }
 
+/** Start a fade-to-black screen transition */
+export function startFade(state: MapState, targetScreenId: string, spawnPosition: Position, now: number): void {
+  getScreen(targetScreenId); // validate exists
+  state.fade = {
+    phase: 'out',
+    startTime: now,
+    duration: FADE_DURATION,
+    targetScreenId,
+    spawnPosition: { ...spawnPosition },
+  };
+}
+
+/**
+ * Update fade progress. Returns the current opacity (0 = clear, 1 = fully black).
+ * Handles phase transition (out→swap screen→in) and cleanup.
+ */
+export function updateFade(state: MapState, now: number): number {
+  if (!state.fade) return 0;
+
+  const elapsed = now - state.fade.startTime;
+  const t = Math.min(1, elapsed / state.fade.duration);
+
+  if (state.fade.phase === 'out') {
+    if (t >= 1) {
+      // Swap screen at midpoint
+      state.currentScreenId = state.fade.targetScreenId;
+      state.playerPosition = { ...state.fade.spawnPosition };
+      state.walk = null;
+      state.fade.phase = 'in';
+      state.fade.startTime = now;
+      return 1;
+    }
+    return t;
+  }
+
+  // phase === 'in'
+  if (t >= 1) {
+    state.fade = null;
+    return 0;
+  }
+  return 1 - t;
+}
+
+/** Is a fade transition currently active? */
+export function isFading(state: MapState): boolean {
+  return state.fade !== null;
+}
+
 /**
  * Handle a click on the map canvas.
  * Returns the hotspot clicked (if any) so the caller can react (e.g., open chat for shops).
@@ -84,7 +135,7 @@ export function transitionScreen(state: MapState, targetScreenId: string, spawnP
  * (caller must call updateWalk each frame and check for exit completion).
  */
 export function handleClick(state: MapState, clickX: number, clickY: number, now: number): Hotspot | null {
-  if (isWalking(state)) return null; // ignore clicks while walking
+  if (isWalking(state) || isFading(state)) return null; // ignore clicks during walk or fade
   const hotspot = findHotspot(state.currentScreenId, clickX, clickY);
   if (hotspot) {
     startWalk(state, hotspot.walkTo, now);
@@ -101,9 +152,11 @@ export function tick(state: MapState, now: number, pendingHotspot: Hotspot | nul
   const completed = updateWalk(state, now);
   if (completed && pendingHotspot) {
     if (pendingHotspot.kind === 'exit' && pendingHotspot.targetScreen && pendingHotspot.spawnPosition) {
-      transitionScreen(state, pendingHotspot.targetScreen, pendingHotspot.spawnPosition);
+      startFade(state, pendingHotspot.targetScreen, pendingHotspot.spawnPosition, now);
     }
     return pendingHotspot;
   }
+  // Advance fade if active
+  updateFade(state, now);
   return null;
 }

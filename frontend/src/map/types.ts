@@ -56,10 +56,23 @@ export interface WalkState {
   duration: number;
 }
 
+/** Fade-to-black transition state */
+export interface FadeState {
+  /** 'out' = fading to black, 'in' = fading from black */
+  phase: 'out' | 'in';
+  startTime: number;
+  duration: number;
+  /** Screen to switch to at the midpoint (end of 'out' phase) */
+  targetScreenId: string;
+  /** Where the player spawns on the target screen */
+  spawnPosition: Position;
+}
+
 /** Overall map state at any point in time */
 export interface MapState {
   currentScreenId: string;
   playerPosition: Position;
   playerDexId: number;
   walk: WalkState | null;
+  fade: FadeState | null;
 }

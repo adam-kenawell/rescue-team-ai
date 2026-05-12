@@ -44,7 +44,7 @@ export function directionFromDelta(dx: number, dy: number): DirectionRow {
 
 // ── Agent State ──────────────────────────────────────────────────
 
-export type AgentStatus = 'sleeping' | 'awake' | 'thinking' | 'done';
+export type AgentStatus = 'sleeping' | 'awake' | 'thinking' | 'done' | 'error';
 
 /** Maps backend agent status to sprite action */
 function statusToAction(status: AgentStatus): Action {
@@ -53,6 +53,7 @@ function statusToAction(status: AgentStatus): Action {
       return 'Sleep';
     case 'thinking':
       return 'Walk';
+    case 'error':
     case 'awake':
     case 'done':
     default:
@@ -235,6 +236,11 @@ export function drawSprite(
   // Thinking indicator
   if (state.status === 'thinking') {
     drawIndicator(ctx, position, dh, '...', 'rgba(255,255,255,0.9)');
+  }
+
+  // Error indicator
+  if (state.status === 'error') {
+    drawIndicator(ctx, position, dh, '!', 'rgba(255,80,80,0.9)');
   }
 }
 

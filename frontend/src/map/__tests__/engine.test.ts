@@ -12,6 +12,9 @@ import {
   transitionScreen,
   handleClick,
   tick,
+  startFade,
+  updateFade,
+  isFading,
 } from '../engine.js';
 import { SCREENS } from '../screens.js';
 
@@ -147,16 +150,27 @@ describe('handleClick', () => {
 });
 
 describe('tick', () => {
-  it('triggers exit transition after walk completes', () => {
+  it('triggers fade transition after walk to exit completes', () => {
     const state = createMapState(25);
     const hotspot = handleClick(state, 256, 10, 0)!;
     expect(hotspot.kind).toBe('exit');
     const duration = state.walk!.duration;
 
-    // Tick past the walk duration
+    // Tick past the walk duration — should start fade, not instant swap
     const result = tick(state, duration + 100, hotspot);
     expect(result).not.toBeNull();
+    expect(isFading(state)).toBe(true);
+    // Screen hasn't changed yet (still fading out)
+    expect(state.currentScreenId).toBe('sharpedo_bluff');
+
+    // Advance past fade-out → screen swaps
+    updateFade(state, duration + 100 + 300);
     expect(state.currentScreenId).toBe('crossroads');
+    expect(state.fade!.phase).toBe('in');
+
+    // Advance past fade-in → fade complete
+    updateFade(state, duration + 100 + 600);
+    expect(isFading(state)).toBe(false);
   });
 
   it('returns completed shop hotspot without screen change', () => {
@@ -174,5 +188,65 @@ describe('tick', () => {
   it('returns null when no walk active', () => {
     const state = createMapState(25);
     expect(tick(state, 100, null)).toBeNull();
+  });
+});
+
+describe('fade transitions', () => {
+  it('startFade sets fade state', () => {
+    const state = createMapState(25);
+    startFade(state, 'crossroads', { x: 100, y: 200 }, 0);
+    expect(isFading(state)).toBe(true);
+    expect(state.fade!.phase).toBe('out');
+  });
+
+  it('updateFade returns increasing opacity during fade-out', () => {
+    const state = createMapState(25);
+    startFade(state, 'crossroads', { x: 100, y: 200 }, 0);
+    const mid = updateFade(state, 125);
+    expect(mid).toBeCloseTo(0.5, 1);
+  });
+
+  it('swaps screen at end of fade-out and transitions to fade-in', () => {
+    const state = createMapState(25);
+    startFade(state, 'crossroads', { x: 100, y: 200 }, 0);
+    const opacity = updateFade(state, 250);
+    expect(opacity).toBe(1);
+    expect(state.currentScreenId).toBe('crossroads');
+    expect(state.playerPosition).toEqual({ x: 100, y: 200 });
+    expect(state.fade!.phase).toBe('in');
+  });
+
+  it('updateFade returns decreasing opacity during fade-in', () => {
+    const state = createMapState(25);
+    startFade(state, 'crossroads', { x: 100, y: 200 }, 0);
+    updateFade(state, 250); // complete out phase
+    const mid = updateFade(state, 250 + 125);
+    expect(mid).toBeCloseTo(0.5, 1);
+  });
+
+  it('clears fade state after fade-in completes', () => {
+    const state = createMapState(25);
+    startFade(state, 'crossroads', { x: 100, y: 200 }, 0);
+    updateFade(state, 250); // out done
+    updateFade(state, 250 + 250); // in done
+    expect(isFading(state)).toBe(false);
+    expect(state.fade).toBeNull();
+  });
+
+  it('returns 0 when no fade active', () => {
+    const state = createMapState(25);
+    expect(updateFade(state, 100)).toBe(0);
+  });
+
+  it('throws for invalid target screen', () => {
+    const state = createMapState(25);
+    expect(() => startFade(state, 'fake', { x: 0, y: 0 }, 0)).toThrow();
+  });
+
+  it('blocks clicks during fade', () => {
+    const state = createMapState(25, 'town_center');
+    startFade(state, 'crossroads', { x: 100, y: 200 }, 0);
+    const result = handleClick(state, 110, 100, 50);
+    expect(result).toBeNull();
   });
 });

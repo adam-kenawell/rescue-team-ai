@@ -2,6 +2,7 @@
 
 import type { MapState } from './types.js';
 import { getScreen } from './screens.js';
+import { updateFade } from './engine.js';
 import {
   type AgentSpriteState,
   getCachedSheets,
@@ -15,6 +16,8 @@ export interface RenderOptions {
   agentStates?: Map<string, AgentSpriteState>;
   /** Player sprite state (for real sprite rendering) */
   playerSpriteState?: AgentSpriteState;
+  /** Current timestamp for fade calculation */
+  now?: number;
 }
 
 /** Draw the current screen background (placeholder solid color) */
@@ -97,6 +100,17 @@ export function drawAgentPlaceholders(
   }
 }
 
+/** Draw a black overlay at the given opacity (for fade transitions) */
+export function drawFadeOverlay(ctx: CanvasRenderingContext2D, state: MapState, now: number): void {
+  const opacity = updateFade(state, now);
+  if (opacity <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.restore();
+}
+
 /** Full render pass */
 export function render(ctx: CanvasRenderingContext2D, state: MapState, opts: RenderOptions = {}): void {
   drawBackground(ctx, state.currentScreenId);
@@ -105,4 +119,7 @@ export function render(ctx: CanvasRenderingContext2D, state: MapState, opts: Ren
     drawHotspots(ctx, state.currentScreenId);
   }
   drawPlayer(ctx, state, opts.playerSpriteState);
+  if (state.fade && opts.now != null) {
+    drawFadeOverlay(ctx, state, opts.now);
+  }
 }
