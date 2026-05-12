@@ -3,6 +3,9 @@ import {
   parseSlashCommand,
   mergeMessages,
   isInputLocked,
+  trackPollFailure,
+  resetPollFailures,
+  MAX_POLL_FAILURES,
 } from '../state.js';
 import type { ChatMessage } from '../types.js';
 
@@ -85,5 +88,37 @@ describe('isInputLocked', () => {
 
   it('returns true when session is completed and waiting', () => {
     expect(isInputLocked('completed', true)).toBe(true);
+  });
+});
+
+describe('trackPollFailure', () => {
+  it('increments failure count', () => {
+    const result = trackPollFailure(0);
+    expect(result.count).toBe(1);
+    expect(result.connectionLost).toBe(false);
+  });
+
+  it('reports connection lost at max failures', () => {
+    const result = trackPollFailure(MAX_POLL_FAILURES - 1);
+    expect(result.count).toBe(MAX_POLL_FAILURES);
+    expect(result.connectionLost).toBe(true);
+  });
+
+  it('reports connection lost beyond max failures', () => {
+    const result = trackPollFailure(MAX_POLL_FAILURES);
+    expect(result.connectionLost).toBe(true);
+  });
+
+  it('does not report connection lost below threshold', () => {
+    const result = trackPollFailure(1);
+    expect(result.connectionLost).toBe(false);
+  });
+});
+
+describe('resetPollFailures', () => {
+  it('resets count to zero', () => {
+    const result = resetPollFailures();
+    expect(result.count).toBe(0);
+    expect(result.connectionLost).toBe(false);
   });
 });

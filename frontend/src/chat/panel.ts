@@ -2,7 +2,7 @@
 
 import type { ChatMessage, ChatPanelConfig, StateUpdate } from './types.js';
 import { AGENT_COLORS, DEFAULT_AGENT_COLOR, USER_COLOR } from './types.js';
-import { parseSlashCommand, mergeMessages, isInputLocked } from './state.js';
+import { parseSlashCommand, mergeMessages, isInputLocked, trackPollFailure, resetPollFailures } from './state.js';
 import { sendMessage, pollState, endSession } from './api.js';
 
 const PANEL_WIDTH = 360;
@@ -156,6 +156,7 @@ export class ChatPanel {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private lastMessageTime: string | null = null;
   private collapsed = false;
+  private pollFailures = 0;
 
   // DOM refs
   private panel!: HTMLDivElement;
@@ -277,7 +278,8 @@ export class ChatPanel {
     try {
       await sendMessage(this.config.baseUrl, this.config.sessionId, text);
     } catch (err) {
-      this.setStatus(`Error: ${err instanceof Error ? err.message : 'unknown'}`);
+      const msg = err instanceof Error ? err.message : 'unknown error';
+      this.appendSystemMessage(`Failed to send message: ${msg}`);
       this.setWaiting(false);
     }
   }
@@ -365,8 +367,17 @@ export class ChatPanel {
       }
 
       this.setStatus('Connected');
+      this.pollFailures = resetPollFailures().count;
     } catch {
-      this.setStatus('Poll error — retrying...');
+      const { count, connectionLost } = trackPollFailure(this.pollFailures);
+      this.pollFailures = count;
+      if (connectionLost) {
+        this.setStatus('Connection lost');
+        this.stopPolling();
+        this.appendSystemMessage('Lost connection to the server. Refresh the page to reconnect.');
+      } else {
+        this.setStatus(`Poll error — retrying... (${count})`);
+      }
     }
   }
 

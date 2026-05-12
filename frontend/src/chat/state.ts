@@ -36,3 +36,20 @@ export function isInputLocked(sessionStatus: string, waitingForResponse: boolean
   if (sessionStatus !== 'active') return true;
   return waitingForResponse;
 }
+
+/** Max consecutive poll failures before giving up */
+export const MAX_POLL_FAILURES = 3;
+
+/**
+ * Track consecutive poll failures. Returns the new count and whether
+ * the connection should be considered lost.
+ */
+export function trackPollFailure(consecutiveFailures: number): { count: number; connectionLost: boolean } {
+  const count = consecutiveFailures + 1;
+  return { count, connectionLost: count >= MAX_POLL_FAILURES };
+}
+
+/** Reset failure count on a successful poll. */
+export function resetPollFailures(): { count: number; connectionLost: boolean } {
+  return { count: 0, connectionLost: false };
+}
