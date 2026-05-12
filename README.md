@@ -1,5 +1,7 @@
 # Rescue Team AI
 
+> **Under construction.** Currently only in pre-alpha build. Test at your own risk.
+
 A gamified multi-agent AI coding assistant, themed after Pokemon Mystery Dungeon: Explorers of Sky.
 
 You take the personality quiz, get assigned a starter Pokemon, pick a partner, and your partner orchestrates a team of AI agents to help you code, debug, plan, and ship.  Each agent runs a shop in Treasure Town.  Walk around the map, talk to your partner to start a session, and watch the agents come alive as they work through your requests.
