@@ -66,6 +66,9 @@ def send_message(session_id: int, content: str) -> dict:
         with orchestrator.override(model=TestModel()):
             orch_result = orchestrator.run_sync(content)
         orchestrator_response = orch_result.output
+        # TestModel returns generic text — replace with in-character placeholder
+        if orchestrator_response == "success (no tool calls)":
+            orchestrator_response = f"{partner_pokemon}: Got it! Let me check with Wigglytuff at the Guild..."
     except Exception as e:
         orchestrator_response = (
             f"{partner_pokemon} ran into trouble and couldn't process that: {e}"
@@ -97,12 +100,15 @@ def send_message(session_id: int, content: str) -> dict:
         )
         return {"orchestrator_response": orchestrator_response, "plan": None, "partner_target": ""}
 
-    # Persist plan as orchestrator message
+    # Persist plan as orchestrator message (human-readable summary, not raw JSON)
     plan_dict = plan.model_dump()
+    plan_summary = f"I've talked to Wigglytuff! Here's the plan: {plan.summary}"
+    for i, step in enumerate(plan.steps, 1):
+        plan_summary += f"\n  {i}. {step.agent} — {step.description}"
     Message.objects.create(
         session=session,
         role=Message.Role.ORCHESTRATOR,
-        content=json.dumps(plan_dict),
+        content=plan_summary,
     )
 
     # Wake agents referenced in the plan
@@ -220,6 +226,9 @@ def ack_step(session_id: int) -> dict:
         with shop_agent.override(model=TestModel()):
             result = shop_agent.run_sync(description)
         agent_response = result.output
+        # TestModel returns generic text — replace with in-character placeholder
+        if agent_response == "success (no tool calls)":
+            agent_response = f"{agent_pokemon} completed the task: {description}"
     except Exception as e:
         agent_failed = True
         agent_response = f"{agent_pokemon} ran into trouble and couldn't complete the task: {e}"

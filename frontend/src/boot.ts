@@ -464,8 +464,10 @@ function initGameLoop(): void {
   // Canvas click handler
   canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
     const hotspot = handleClick(mapState, x, y, performance.now());
     if (hotspot) pendingHotspot = hotspot;
   });

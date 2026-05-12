@@ -62,7 +62,10 @@ DATABASES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [ROOT_DIR / "frontend" / "dist"]
+STATICFILES_DIRS = [
+    ROOT_DIR / "frontend" / "dist",
+    ("pmd-visualizer", ROOT_DIR.parent / "pmd-visualizer" / "dist"),
+]
 
 TIME_ZONE = "UTC"
 USE_TZ = True
