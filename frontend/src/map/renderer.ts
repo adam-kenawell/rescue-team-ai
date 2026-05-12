@@ -115,6 +115,20 @@ export function drawFadeOverlay(ctx: CanvasRenderingContext2D, state: MapState, 
 export function render(ctx: CanvasRenderingContext2D, state: MapState, opts: RenderOptions = {}): void {
   drawBackground(ctx, state.currentScreenId);
   drawAgentPlaceholders(ctx, state.currentScreenId, opts.agentStates);
+
+  // Draw partner sprite (not tied to a hotspot)
+  if (opts.agentStates) {
+    for (const [, agentState] of opts.agentStates) {
+      if (!agentState.isPartner) continue;
+      // Position partner near player if no explicit position set
+      if (agentState.position.x === 0 && agentState.position.y === 0) {
+        agentState.position = { x: state.playerPosition.x + 40, y: state.playerPosition.y };
+      }
+      const loaded = getCachedSheets(agentState.dexId);
+      drawSprite(ctx, agentState, loaded);
+    }
+  }
+
   if (opts.debugHotspots) {
     drawHotspots(ctx, state.currentScreenId);
   }

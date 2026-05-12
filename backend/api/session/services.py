@@ -4,6 +4,8 @@ import json
 
 from django.utils import timezone
 
+from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
+
 from api.models import Player, Agent, Session, SessionAgent, Message
 from api.agents.orchestrator import create_orchestrator
 from api.agents.planner import planner_agent
@@ -11,6 +13,19 @@ from api.agents.schemas import TaskPlan
 from api.agents.registry import get_agent
 from config.constants import MAX_MESSAGES_PER_SESSION, MAX_AGENT_CALLS_PER_MESSAGE
 from config.llm import get_model_for_tier
+
+
+def _build_message_history(session: Session) -> list[ModelRequest | ModelResponse]:
+    """Build Pydantic AI message history from session messages."""
+    history: list[ModelRequest | ModelResponse] = []
+    for msg in session.messages.all():
+        if msg.role == Message.Role.USER:
+            history.append(ModelRequest(parts=[UserPromptPart(content=msg.content)]))
+        else:
+            # orchestrator and agent messages are assistant responses
+            prefix = f"[{msg.agent.pokemon}] " if msg.agent else ""
+            history.append(ModelResponse(parts=[TextPart(content=f"{prefix}{msg.content}")]))
+    return history
 
 
 class SessionError(Exception):
@@ -56,6 +71,9 @@ def send_message(session_id: int, content: str, llm_provider: str = "", llm_key:
     # Persist user message
     Message.objects.create(session=session, role=Message.Role.USER, content=content)
 
+    # Build conversation history for context
+    history = _build_message_history(session)
+
     # Run orchestrator
     partner_pokemon = session.player.partner_pokemon
     orchestrator = create_orchestrator(partner_pokemon)
@@ -63,7 +81,7 @@ def send_message(session_id: int, content: str, llm_provider: str = "", llm_key:
 
     try:
         with orchestrator.override(model=orch_model):
-            orch_result = orchestrator.run_sync(content)
+            orch_result = orchestrator.run_sync(content, message_history=history)
         orchestrator_response = orch_result.output
     except Exception as e:
         orchestrator_response = (
@@ -86,7 +104,7 @@ def send_message(session_id: int, content: str, llm_provider: str = "", llm_key:
     planner_model = get_model_for_tier(llm_provider, llm_key, "HIGH_REASONING")
     try:
         with planner_agent.override(model=planner_model):
-            plan_result = planner_agent.run_sync(content)
+            plan_result = planner_agent.run_sync(content, message_history=history)
         plan: TaskPlan = plan_result.output
     except Exception as e:
         error_msg = f"Wigglytuff ran into trouble planning the task: {e}"
@@ -219,10 +237,11 @@ def ack_step(session_id: int, llm_provider: str = "", llm_key: str = "") -> dict
     # Run the shop agent
     agent_failed = False
     agent_model = get_model_for_tier(llm_provider, llm_key, db_agent.tier)
+    history = _build_message_history(session)
     try:
         shop_agent = get_agent(agent_pokemon, session.workspace_path, session.pk)
         with shop_agent.override(model=agent_model):
-            result = shop_agent.run_sync(description)
+            result = shop_agent.run_sync(description, message_history=history)
         agent_response = result.output
     except Exception as e:
         agent_failed = True

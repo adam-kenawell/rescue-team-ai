@@ -20,6 +20,23 @@ const msgContainer = document.getElementById('onboarding-messages') as HTMLDivEl
 const input = document.getElementById('onboarding-input') as HTMLInputElement;
 const sendBtn = document.getElementById('onboarding-send') as HTMLButtonElement;
 
+// ── Pokedex ──────────────────────────────────────────────────────
+
+let pokedex: Record<string, number> = {};
+
+async function loadPokedex(): Promise<void> {
+  try {
+    const res = await fetch('/static/shared/pokedex.json');
+    pokedex = await res.json();
+  } catch {
+    console.warn('Failed to load pokedex.json — using fallback dex IDs');
+  }
+}
+
+function getDexId(pokemon: string): number {
+  return pokedex[pokemon.toLowerCase()] ?? 25; // fallback to Pikachu
+}
+
 // ── State ────────────────────────────────────────────────────────
 
 const API_BASE = '/api';
@@ -105,6 +122,9 @@ function getRetryMessage(): string {
 // ── Boot ─────────────────────────────────────────────────────────
 
 async function boot(): Promise<void> {
+  // Load pokedex for dex ID lookups
+  await loadPokedex();
+
   // Check localStorage for existing player
   const savedPlayerId = localStorage.getItem('rta_player_id');
   const savedProvider = localStorage.getItem('rta_llm_provider');
@@ -418,7 +438,7 @@ async function launchGame(): Promise<void> {
 
     // Transition to game layout
     onboardingEl.style.display = 'none';
-    gameEl.style.display = 'block';
+    gameEl.style.display = 'flex';
 
     initGameLoop();
   } catch {
@@ -435,15 +455,22 @@ let agentStates: Map<string, AgentSpriteState>;
 let playerSpriteState: AgentSpriteState;
 
 function initGameLoop(): void {
-  // TODO: look up dex IDs from pokedex.json — hardcode player for now
-  const playerDexId = 25; // placeholder
+  const playerDexId = getDexId(state.starterPokemon);
+  const partnerDexId = getDexId(state.partnerPokemon);
 
   mapState = createMapState(playerDexId);
   agentStates = new Map();
   playerSpriteState = createAgentSpriteState(state.starterPokemon, playerDexId, false);
 
-  // Load player sprite
+  // Create partner sprite state (spawns at Sharpedo Bluff near player)
+  const partnerState = createAgentSpriteState(state.partnerPokemon, partnerDexId, true);
+  partnerState.status = 'awake';
+  partnerState.action = 'Idle';
+  agentStates.set(state.partnerPokemon.toLowerCase(), partnerState);
+
+  // Load player + partner sprites
   loadSpriteSheets(playerDexId);
+  loadSpriteSheets(partnerDexId);
 
   // Init chat panel
   chatPanel = new ChatPanel({

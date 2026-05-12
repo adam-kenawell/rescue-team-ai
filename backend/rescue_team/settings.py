@@ -65,6 +65,7 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [
     ROOT_DIR / "frontend" / "dist",
     ("pmd-visualizer", ROOT_DIR.parent / "pmd-visualizer" / "dist"),
+    ("shared", ROOT_DIR / "shared"),
 ]
 
 TIME_ZONE = "UTC"
