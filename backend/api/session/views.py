@@ -40,9 +40,11 @@ def send_message_view(request: HttpRequest, session_id: int) -> JsonResponse:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
     content = body.get("content", "")
+    llm_provider = request.headers.get("X-LLM-Provider", "")
+    llm_key = request.headers.get("X-LLM-Key", "")
 
     try:
-        result = send_message(session_id, content)
+        result = send_message(session_id, content, llm_provider, llm_key)
     except SessionError as e:
         return JsonResponse({"error": e.message}, status=e.status_code)
 
@@ -75,8 +77,11 @@ def end_session_view(request: HttpRequest, session_id: int) -> JsonResponse:
 @csrf_exempt
 @require_POST
 def ack_view(request: HttpRequest, session_id: int) -> JsonResponse:
+    llm_provider = request.headers.get("X-LLM-Provider", "")
+    llm_key = request.headers.get("X-LLM-Key", "")
+
     try:
-        result = ack_step(session_id)
+        result = ack_step(session_id, llm_provider, llm_key)
     except SessionError as e:
         return JsonResponse({"error": e.message}, status=e.status_code)
 

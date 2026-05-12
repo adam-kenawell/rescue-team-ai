@@ -276,7 +276,10 @@ export class ChatPanel {
     this.setWaiting(true);
 
     try {
-      await sendMessage(this.config.baseUrl, this.config.sessionId, text);
+      const llmHeaders: Record<string, string> = {};
+      if (this.config.llmProvider) llmHeaders['X-LLM-Provider'] = this.config.llmProvider;
+      if (this.config.llmKey) llmHeaders['X-LLM-Key'] = this.config.llmKey;
+      await sendMessage(this.config.baseUrl, this.config.sessionId, text, llmHeaders);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'unknown error';
       this.appendSystemMessage(`Failed to send message: ${msg}`);

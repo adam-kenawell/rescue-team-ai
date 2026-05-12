@@ -13,10 +13,13 @@ async function parseError(res: Response): Promise<string> {
 }
 
 /** Send a user message to the session */
-export async function sendMessage(baseUrl: string, sessionId: number, content: string): Promise<unknown> {
+export async function sendMessage(
+  baseUrl: string, sessionId: number, content: string,
+  llmHeaders?: Record<string, string>,
+): Promise<unknown> {
   const res = await fetch(`${baseUrl}/session/${sessionId}/message/`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...llmHeaders },
     body: JSON.stringify({ content }),
   });
   if (!res.ok) throw new Error(await parseError(res));

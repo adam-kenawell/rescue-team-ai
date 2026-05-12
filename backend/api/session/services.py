@@ -10,8 +10,7 @@ from api.agents.planner import planner_agent
 from api.agents.schemas import TaskPlan
 from api.agents.registry import get_agent
 from config.constants import MAX_MESSAGES_PER_SESSION, MAX_AGENT_CALLS_PER_MESSAGE
-
-from pydantic_ai.models.test import TestModel
+from config.llm import get_model_for_tier
 
 
 class SessionError(Exception):
@@ -37,7 +36,7 @@ def start_session(player_id: int, workspace_path: str = "") -> Session:
     return Session.objects.create(player=player, workspace_path=workspace_path)
 
 
-def send_message(session_id: int, content: str) -> dict:
+def send_message(session_id: int, content: str, llm_provider: str = "", llm_key: str = "") -> dict:
     """Process a user message: persist, run orchestrator + planner, wake agents."""
     try:
         session = Session.objects.get(pk=session_id)
@@ -60,15 +59,12 @@ def send_message(session_id: int, content: str) -> dict:
     # Run orchestrator
     partner_pokemon = session.player.partner_pokemon
     orchestrator = create_orchestrator(partner_pokemon)
+    orch_model = get_model_for_tier(llm_provider, llm_key, "HIGH_REASONING")
 
     try:
-        # Use TestModel for now — will be swapped for real model via config later
-        with orchestrator.override(model=TestModel()):
+        with orchestrator.override(model=orch_model):
             orch_result = orchestrator.run_sync(content)
         orchestrator_response = orch_result.output
-        # TestModel returns generic text — replace with in-character placeholder
-        if orchestrator_response == "success (no tool calls)":
-            orchestrator_response = f"{partner_pokemon}: Got it! Let me check with Wigglytuff at the Guild..."
     except Exception as e:
         orchestrator_response = (
             f"{partner_pokemon} ran into trouble and couldn't process that: {e}"
@@ -87,8 +83,9 @@ def send_message(session_id: int, content: str) -> dict:
     )
 
     # Run planner (Wigglytuff) to generate a task plan
+    planner_model = get_model_for_tier(llm_provider, llm_key, "HIGH_REASONING")
     try:
-        with planner_agent.override(model=TestModel()):
+        with planner_agent.override(model=planner_model):
             plan_result = planner_agent.run_sync(content)
         plan: TaskPlan = plan_result.output
     except Exception as e:
@@ -188,7 +185,7 @@ def get_session_state(session_id: int, since: str | None = None) -> dict:
     }
 
 
-def ack_step(session_id: int) -> dict:
+def ack_step(session_id: int, llm_provider: str = "", llm_key: str = "") -> dict:
     """Acknowledge partner walk completion, execute current step, advance to next."""
     try:
         session = Session.objects.get(pk=session_id)
@@ -221,14 +218,12 @@ def ack_step(session_id: int) -> dict:
 
     # Run the shop agent
     agent_failed = False
+    agent_model = get_model_for_tier(llm_provider, llm_key, db_agent.tier)
     try:
         shop_agent = get_agent(agent_pokemon, session.workspace_path, session.pk)
-        with shop_agent.override(model=TestModel()):
+        with shop_agent.override(model=agent_model):
             result = shop_agent.run_sync(description)
         agent_response = result.output
-        # TestModel returns generic text — replace with in-character placeholder
-        if agent_response == "success (no tool calls)":
-            agent_response = f"{agent_pokemon} completed the task: {description}"
     except Exception as e:
         agent_failed = True
         agent_response = f"{agent_pokemon} ran into trouble and couldn't complete the task: {e}"
