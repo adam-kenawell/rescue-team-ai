@@ -1,113 +1,223 @@
-# Rescue Team AI# Rescue Team AI
+# Rescue Team AI# Rescue Team AI# Rescue Team AI
 
 
 
-Gamified multi-agent AI orchestration — Pokemon Mystery Dungeon themed.Gamified multi-agent AI orchestration — Pokémon Mystery Dungeon themed.
+A gamified multi-agent AI coding assistant, themed after Pokemon Mystery Dungeon: Explorers of Sky.
 
 
 
-Your partner Pokemon orchestrates a team of AI agents, each running a shop in Treasure Town, to help you code, debug, plan, and ship. Walk around the map, talk to your partner to start a session, and watch the agents come alive as they work through your requests.Your partner Pokémon orchestrates a team of AI agents (each a shop in Treasure Town) to help you code, debug, plan, and ship.
+You take the Explorers personality quiz, get assigned a starter Pokemon, pick a partner, and your partner orchestrates a team of AI agents to help you code, debug, plan, and ship.  Each agent runs a shop in Treasure Town.  Walk around the map, talk to your partner to start a session, and watch the agents come alive as they work through your requests.Gamified multi-agent AI orchestration — Pokemon Mystery Dungeon themed.Gamified multi-agent AI orchestration — Pokémon Mystery Dungeon themed.
 
 
 
-## Stack## Stack
+## Quick Start
 
 
 
-| Layer | Tech |- **Backend**: Python 3.14.5 · Django 6.0.5 · Pydantic AI 1.93.0 · Poetry 2.4.1
-
-|-------|------|- **Frontend**: TypeScript 6.0.3 · 2D Canvas · htmx 2.0.10 · pmd-visualizer
-
-| Backend | Python 3.13 · Django 6.0.5 · Pydantic AI 1.93.0 · Poetry |- **Testing**: pytest 9.0.3 · vitest 4.1.6
-
-| Frontend | TypeScript 6.0 · 2D Canvas · htmx 2.0.10 · pmd-visualizer |
-
-| LLMs | Anthropic (default) · OpenAI · Google GenAI — tiered model system |## Setup
-
-| Testing | pytest 9.0.3 + pytest-django (backend) · vitest 4.1.6 (frontend) |
-
-| Database | SQLite (dev) |### Backend
+### PrerequisitesYour partner Pokemon orchestrates a team of AI agents, each running a shop in Treasure Town, to help you code, debug, plan, and ship. Walk around the map, talk to your partner to start a session, and watch the agents come alive as they work through your requests.Your partner Pokémon orchestrates a team of AI agents (each a shop in Treasure Town) to help you code, debug, plan, and ship.
 
 
 
-## Agent Roster```bash
-
-cd backend
-
-| Shop | Pokemon | Role | Tier |poetry install
-
-|------|---------|------|------|cp ../.env.example ../.env  # fill in your keys
-
-| Wigglytuff's Guild | Wigglytuff | Planner — decomposes requests into task plans | HIGH |poetry run python manage.py migrate
-
-| Kecleon Shop | Kecleon | File Navigator — reads, searches, lists files | FAST |poetry run python manage.py check
-
-| Kangaskhan Storage | Kangaskhan | Memory/Context — manages history, summarizes | MID |```
-
-| Duskull Bank | Duskull | Git Agent — commits, branches, diffs, status | MID |
-
-| Electivire Link Shop | Electivire | Code Writer — writes and edits code | HIGH |### Frontend
-
-| Marowak Dojo | Marowak | Terminal Runner — executes shell commands, tests | FAST |
-
-| Chansey's Day Care | Chansey | Code Reviewer — reviews diffs, suggests improvements | HIGH |```bash
-
-| Xatu Appraisal | Xatu | Analyzer/Debugger — inspects errors, diagnoses | MID |cd frontend
-
-| (Your choice) | Partner | Orchestrator — routes tasks, manages conversation | HIGH |npm install
-
-npm run build
-
-## Prerequisites```
-
-
-
-- Python 3.13+## Development
+- [Python 3.13+](https://www.python.org/downloads/)
 
 - [Poetry](https://python-poetry.org/) 2.x
 
-- Node.js 20+```bash
+- [Node.js](https://nodejs.org/) 20+## Stack## Stack
+
+- [pmd-visualizer](https://github.com/adam-kenawell/pmd-visualizer) cloned as a sibling directory
+
+- An API key for at least one LLM provider (Anthropic, OpenAI, or Google GenAI)
+
+
+
+### Setup| Layer | Tech |- **Backend**: Python 3.14.5 · Django 6.0.5 · Pydantic AI 1.93.0 · Poetry 2.4.1
+
+
+
+```bash|-------|------|- **Frontend**: TypeScript 6.0.3 · 2D Canvas · htmx 2.0.10 · pmd-visualizer
+
+git clone https://github.com/adam-kenawell/rescue-team-ai.git
+
+cd rescue-team-ai| Backend | Python 3.13 · Django 6.0.5 · Pydantic AI 1.93.0 · Poetry |- **Testing**: pytest 9.0.3 · vitest 4.1.6
+
+
+
+# Backend| Frontend | TypeScript 6.0 · 2D Canvas · htmx 2.0.10 · pmd-visualizer |
+
+cd backend
+
+poetry install| LLMs | Anthropic (default) · OpenAI · Google GenAI — tiered model system |## Setup
+
+poetry run python manage.py migrate
+
+poetry run python manage.py loaddata agents| Testing | pytest 9.0.3 + pytest-django (backend) · vitest 4.1.6 (frontend) |
+
+cd ..
+
+| Database | SQLite (dev) |### Backend
+
+# Frontend
+
+cd frontend
+
+npm install
+
+cd ..## Agent Roster```bash
+
+```
+
+cd backend
+
+### Play
+
+| Shop | Pokemon | Role | Tier |poetry install
+
+Double-click `play.bat` (or run it from a terminal).  It builds the frontend, starts the server, and opens your browser.
+
+|------|---------|------|------|cp ../.env.example ../.env  # fill in your keys
+
+The app walks you through everything from there: personality quiz, LLM provider + API key, workspace path.  No `.env` file required for basic usage.
+
+| Wigglytuff's Guild | Wigglytuff | Planner — decomposes requests into task plans | HIGH |poetry run python manage.py migrate
+
+## Agent Roster
+
+| Kecleon Shop | Kecleon | File Navigator — reads, searches, lists files | FAST |poetry run python manage.py check
+
+| Shop | Pokemon | Role | Tier |
+
+|------|---------|------|------|| Kangaskhan Storage | Kangaskhan | Memory/Context — manages history, summarizes | MID |```
+
+| Wigglytuff's Guild | Wigglytuff | Planner — decomposes requests into task plans | HIGH |
+
+| Kecleon Shop | Kecleon | File Navigator — reads, searches, lists files | FAST || Duskull Bank | Duskull | Git Agent — commits, branches, diffs, status | MID |
+
+| Kangaskhan Storage | Kangaskhan | Memory/Context — manages history, summarizes | MID |
+
+| Duskull Bank | Duskull | Git Agent — commits, branches, diffs, status | MID || Electivire Link Shop | Electivire | Code Writer — writes and edits code | HIGH |### Frontend
+
+| Electivire Link Shop | Electivire | Code Writer — writes and edits code | HIGH |
+
+| Marowak Dojo | Marowak | Terminal Runner — executes shell commands, tests | FAST || Marowak Dojo | Marowak | Terminal Runner — executes shell commands, tests | FAST |
+
+| Chansey's Day Care | Chansey | Code Reviewer — reviews diffs, suggests improvements | HIGH |
+
+| Xatu Appraisal | Xatu | Analyzer/Debugger — inspects errors, diagnoses | MID || Chansey's Day Care | Chansey | Code Reviewer — reviews diffs, suggests improvements | HIGH |```bash
+
+| *(Your choice)* | Partner | Orchestrator — routes tasks, manages conversation | HIGH |
+
+| Xatu Appraisal | Xatu | Analyzer/Debugger — inspects errors, diagnoses | MID |cd frontend
+
+## Stack
+
+| (Your choice) | Partner | Orchestrator — routes tasks, manages conversation | HIGH |npm install
+
+| Layer | Tech |
+
+|-------|------|npm run build
+
+| Backend | Python 3.13 · Django 6.0.5 · Pydantic AI 1.93.0 · Poetry |
+
+| Frontend | TypeScript 6.0 · 2D Canvas · htmx 2.0.10 · pmd-visualizer |## Prerequisites```
+
+| LLMs | Anthropic (default) · OpenAI · Google GenAI — tiered model system |
+
+| Testing | pytest 9.0.3 + pytest-django · vitest 4.1.6 |
+
+| Database | SQLite |
+
+- Python 3.13+## Development
+
+## Testing
+
+- [Poetry](https://python-poetry.org/) 2.x
+
+```bash
+
+# Backend (167 tests)- Node.js 20+```bash
+
+cd backend && poetry run pytest -v
 
 - An API key for at least one LLM provider (Anthropic, OpenAI, or Google GenAI)# Backend
 
-- `pmd-visualizer` cloned as a sibling directory (see [pmd-visualizer](https://github.com/adam-kenawell/pmd-visualizer))cd backend && poetry run python manage.py runserver
+# Frontend (86 tests)
+
+cd frontend && npx vitest run- `pmd-visualizer` cloned as a sibling directory (see [pmd-visualizer](https://github.com/adam-kenawell/pmd-visualizer))cd backend && poetry run python manage.py runserver
+
+```
 
 
+
+## How It Works
 
 ## Setup# Frontend (watch mode)
 
-cd frontend && npm run dev
+1. First boot: you take the Explorers of Sky personality quiz (faithful to the original game's nature/starter mappings)
 
-### 1. Clone```
+2. Pick a partner Pokemon (can't share a type with your starter)cd frontend && npm run dev
 
+3. Choose your LLM provider and paste your API key
 
-```bash
+4. Point the team at a project directory on your machine### 1. Clone```
+
+5. Your partner starts a session and routes your requests to the right agents
+
+6. Agents wake up, do their thing, and report back through chat
+
+7. Type `/rest` when you're done to end the session```bash
+
 git clone https://github.com/adam-kenawell/rescue-team-ai.git
-cd rescue-team-ai
+
+The whole thing runs locally on Django's dev server.  No cloud hosting, no deployment, just you and your rescue team.cd rescue-team-ai
+
 ```
+
+## Project Structure
 
 ### 2. Environment Variables
 
-```bash
-cp .env.example .env
-# Edit .env and fill in your API key + desired provider
 ```
 
-### 3. Backend
+rescue-team-ai/```bash
 
-```bash
-cd backend
-poetry install
-poetry run python manage.py migrate
-poetry run python manage.py loaddata agents    # seed the 8 shop agents
-poetry run python manage.py check
-```
+  play.bat              # Double-click to launchcp .env.example .env
 
-### 4. Frontend
+  backend/# Edit .env and fill in your API key + desired provider
 
-```bash
+    api/```
+
+      agents/           # 8 shop agents + orchestrator + safety + registry
+
+      quiz/             # Personality quiz (Explorers of Sky faithful)### 3. Backend
+
+      session/          # Session CRUD, message dispatch, polling
+
+    config/             # LLM tier config, guardrail constants```bash
+
+    game/               # Django app — serves the game pagecd backend
+
+  frontend/poetry install
+
+    src/poetry run python manage.py migrate
+
+      map/              # Canvas engine, screens, sprites, rendererpoetry run python manage.py loaddata agents    # seed the 8 shop agents
+
+      chat/             # Chat panel, API client, state managementpoetry run python manage.py check
+
+  shared/```
+
+    pokedex.json        # Full national dex (name -> dex ID)
+
+```### 4. Frontend
+
+
+
+## License```bash
+
 cd frontend
-npm install
+
+This is a personal project.  Sprites are from the [PMD Collab Sprite Repository](https://sprites.pmdcollab.org/) (CC-licensed).npm install
+
 npm run build
 ```
 
