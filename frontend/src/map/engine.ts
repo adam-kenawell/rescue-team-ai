@@ -141,6 +141,8 @@ export function handleClick(state: MapState, clickX: number, clickY: number, now
     startWalk(state, hotspot.walkTo, now);
     return hotspot;
   }
+  // No hotspot — walk to clicked position
+  startWalk(state, { x: clickX, y: clickY }, now);
   return null;
 }
 

@@ -1,10 +1,10 @@
 // boot.ts — Application entry point
 // Orchestrates onboarding (quiz, config) and game mode (map + chat)
 
-import { createMapState, render, tick, handleClick, isFading, updateFade } from './map/index.js';
+import { createMapState, render, tick, handleClick, isFading, updateFade, isWalking } from './map/index.js';
 import type { MapState, Hotspot } from './map/index.js';
 import { CANVAS_W, CANVAS_H } from './map/index.js';
-import { loadSpriteSheets, createAgentSpriteState, updateAgentStates } from './map/index.js';
+import { loadSpriteSheets, createAgentSpriteState, updateAgentStates, directionFromDelta } from './map/index.js';
 import type { AgentSpriteState } from './map/index.js';
 import type { AgentStatus } from './map/sprites.js';
 import { ChatPanel } from './chat/index.js';
@@ -507,7 +507,21 @@ function initGameLoop(): void {
   });
 
   // Start render loop
+  lastFrameTime = performance.now();
   requestAnimationFrame(gameLoop);
+}
+
+const FRAME_MS = 80; // sprite animation frame interval
+let lastFrameTime = 0;
+
+function advanceSpriteFrames(now: number): void {
+  if (now - lastFrameTime < FRAME_MS) return;
+  lastFrameTime = now;
+
+  playerSpriteState.frame++;
+  for (const [, agent] of agentStates) {
+    agent.frame++;
+  }
 }
 
 function gameLoop(now: number): void {
@@ -517,8 +531,19 @@ function gameLoop(now: number): void {
   const completed = tick(mapState, now, pendingHotspot);
   if (completed) pendingHotspot = null;
 
-  // Update player sprite position
+  // Advance sprite animation frames
+  advanceSpriteFrames(now);
+
+  // Update player sprite position + action + direction
   playerSpriteState.position = { ...mapState.playerPosition };
+  if (isWalking(mapState) && mapState.walk) {
+    playerSpriteState.action = 'Walk';
+    const dx = mapState.walk.to.x - mapState.walk.from.x;
+    const dy = mapState.walk.to.y - mapState.walk.from.y;
+    playerSpriteState.direction = directionFromDelta(dx, dy);
+  } else {
+    playerSpriteState.action = 'Idle';
+  }
 
   // Render
   render(ctx, mapState, {

@@ -60,18 +60,18 @@ describe('pointInRect', () => {
 
 describe('findHotspot', () => {
   it('finds exit hotspot on sharpedo bluff', () => {
-    const h = findHotspot('sharpedo_bluff', 256, 10);
+    const h = findHotspot('sharpedo_bluff', 480, 30);
     expect(h).not.toBeNull();
     expect(h!.id).toBe('exit_to_crossroads');
   });
 
   it('returns null for empty area', () => {
-    const h = findHotspot('sharpedo_bluff', 256, 200);
+    const h = findHotspot('sharpedo_bluff', 480, 400);
     expect(h).toBeNull();
   });
 
   it('finds shop hotspot', () => {
-    const h = findHotspot('town_center', 110, 100);
+    const h = findHotspot('town_center', 200, 180);
     expect(h).not.toBeNull();
     expect(h!.kind).toBe('shop');
     expect(h!.agentPokemon).toBe('kecleon');
@@ -129,16 +129,16 @@ describe('transitionScreen', () => {
 describe('handleClick', () => {
   it('starts walk to hotspot', () => {
     const state = createMapState(25);
-    const hotspot = handleClick(state, 256, 10, 0);
+    const hotspot = handleClick(state, 480, 30, 0);
     expect(hotspot).not.toBeNull();
     expect(hotspot!.id).toBe('exit_to_crossroads');
     expect(isWalking(state)).toBe(true);
   });
 
-  it('returns null when clicking empty area', () => {
+  it('returns null when clicking empty area but still walks', () => {
     const state = createMapState(25);
-    expect(handleClick(state, 256, 200, 0)).toBeNull();
-    expect(isWalking(state)).toBe(false);
+    expect(handleClick(state, 480, 400, 0)).toBeNull();
+    expect(isWalking(state)).toBe(true); // click-to-walk to empty area
   });
 
   it('ignores clicks while walking', () => {
@@ -152,7 +152,7 @@ describe('handleClick', () => {
 describe('tick', () => {
   it('triggers fade transition after walk to exit completes', () => {
     const state = createMapState(25);
-    const hotspot = handleClick(state, 256, 10, 0)!;
+    const hotspot = handleClick(state, 480, 30, 0)!;
     expect(hotspot.kind).toBe('exit');
     const duration = state.walk!.duration;
 
@@ -175,7 +175,7 @@ describe('tick', () => {
 
   it('returns completed shop hotspot without screen change', () => {
     const state = createMapState(25, 'town_center');
-    const hotspot = handleClick(state, 110, 100, 0)!;
+    const hotspot = handleClick(state, 200, 180, 0)!;
     expect(hotspot.kind).toBe('shop');
     const duration = state.walk!.duration;
 
