@@ -41,6 +41,10 @@ export interface ChatPanelConfig {
   onSessionEnd?: () => void;
   /** Poll interval in ms (default 2000) */
   pollInterval?: number;
+  /** LLM provider name sent as X-LLM-Provider header */
+  llmProvider?: string;
+  /** LLM API key sent as X-LLM-Key header */
+  llmKey?: string;
 }
 
 /** Hardcoded agent name colors */
