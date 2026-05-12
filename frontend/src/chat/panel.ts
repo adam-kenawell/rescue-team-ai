@@ -135,6 +135,17 @@ const STYLES = `
     color: #888;
     border-top: 1px solid #333;
   }
+  .rta-chat-loading {
+    padding: 6px 10px;
+    font-style: italic;
+    color: #9090c0;
+    font-size: 12px;
+    animation: rta-pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes rta-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
 `;
 
 export class ChatPanel {
@@ -154,6 +165,7 @@ export class ChatPanel {
   private sendBtn!: HTMLButtonElement;
   private stopBtn!: HTMLButtonElement;
   private statusEl!: HTMLDivElement;
+  private loadingEl!: HTMLDivElement;
 
   constructor(config: ChatPanelConfig) {
     this.config = config;
@@ -187,6 +199,13 @@ export class ChatPanel {
     this.msgContainer = document.createElement('div');
     this.msgContainer.className = 'rta-chat-messages';
     this.panel.appendChild(this.msgContainer);
+
+    // Loading indicator
+    this.loadingEl = document.createElement('div');
+    this.loadingEl.className = 'rta-chat-loading';
+    this.loadingEl.textContent = 'Your team is working on it...';
+    this.loadingEl.style.display = 'none';
+    this.msgContainer.appendChild(this.loadingEl);
 
     // Status bar
     this.statusEl = document.createElement('div');
@@ -402,6 +421,12 @@ export class ChatPanel {
   /** Set waiting state */
   private setWaiting(waiting: boolean): void {
     this.waitingForResponse = waiting;
+    this.loadingEl.style.display = waiting ? 'block' : 'none';
+    if (waiting) {
+      // Keep loading indicator at the bottom
+      this.msgContainer.appendChild(this.loadingEl);
+      this.msgContainer.scrollTop = this.msgContainer.scrollHeight;
+    }
     this.updateInputState();
   }
 
