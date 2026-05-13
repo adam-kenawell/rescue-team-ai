@@ -44,75 +44,75 @@ const NATURE_TO_DEX = {
 
 const QUESTIONS = [
     {
-        text: "You find a treasure chest in a dungeon. What do you do?",
+        text: "What's your favorite programming language?",
         answers: [
-            { label: "Open it immediately!",            scores: { brave: 2, jolly: 1 } },
-            { label: "Check it carefully for traps.",   scores: { calm: 2, timid: 1 } },
-            { label: "Ignore it. Treasure slows you down.", scores: { hardy: 2, bold: 1 } },
-            { label: "Open it, but stand behind someone else.", scores: { sassy: 2, quirky: 1 } },
+            { label: "Python -- clean and powerful.",    scores: { calm: 2, bold: 1 } },
+            { label: "Rust -- safety is non-negotiable.", scores: { hardy: 2, brave: 1 } },
+            { label: "JavaScript -- it runs everywhere.", scores: { jolly: 2, quirky: 1 } },
+            { label: "C -- I like to suffer.",           scores: { brave: 2, lonely: 1 } },
         ]
     },
     {
-        text: "A teammate is struggling on a mission. What's your move?",
+        text: "What's your favorite LLM?",
         answers: [
-            { label: "Rush in and carry them!",         scores: { brave: 2, hardy: 1 } },
-            { label: "Encourage them from behind.",     scores: { calm: 2, lonely: 1 } },
-            { label: "Tell them to figure it out.",     scores: { sassy: 2, bold: 1 } },
-            { label: "Make a joke to lighten the mood.", scores: { jolly: 2, quirky: 1 } },
+            { label: "Claude -- thoughtful and thorough.", scores: { calm: 2, bold: 1 } },
+            { label: "GPT -- the OG. Respect the lineage.", scores: { hardy: 2, brave: 1 } },
+            { label: "Gemini -- Google scale, baby.",     scores: { bold: 2, sassy: 1 } },
+            { label: "Local models -- I don't trust the cloud.", scores: { lonely: 2, timid: 1 } },
         ]
     },
     {
-        text: "You're lost in a mystery dungeon. What's your strategy?",
+        text: "Your CI pipeline just failed at 2 AM. What do you do?",
         answers: [
-            { label: "Pick a direction and commit.",    scores: { brave: 1, hardy: 2 } },
-            { label: "Study the map carefully.",        scores: { calm: 1, bold: 2 } },
-            { label: "Wander and see what happens.",    scores: { quirky: 2, jolly: 1 } },
-            { label: "Sit down and think it over.",     scores: { timid: 2, lonely: 1 } },
+            { label: "Fix it right now. Sleep is for the weak.", scores: { brave: 2, hardy: 1 } },
+            { label: "Check the logs, make a plan for morning.", scores: { calm: 2, bold: 1 } },
+            { label: "Rerun it. Probably flaky.",        scores: { quirky: 2, sassy: 1 } },
+            { label: "Pretend I didn't see the alert.",  scores: { timid: 2, jolly: 1 } },
         ]
     },
     {
-        text: "How do you handle a rival rescue team trash-talking you?",
+        text: "How do you feel about code reviews?",
         answers: [
-            { label: "Challenge them to a battle!",     scores: { brave: 2, sassy: 1 } },
-            { label: "Ignore them completely.",         scores: { calm: 2, hardy: 1 } },
-            { label: "Trash-talk them right back.",     scores: { sassy: 2, jolly: 1 } },
-            { label: "Walk away... but remember it.",   scores: { lonely: 2, timid: 1 } },
+            { label: "Love them. Rip my code apart.",    scores: { brave: 2, bold: 1 } },
+            { label: "They're essential for quality.",   scores: { calm: 2, hardy: 1 } },
+            { label: "I just approve everything tbh.",   scores: { jolly: 2, quirky: 1 } },
+            { label: "Stressful. What if they judge me?", scores: { timid: 2, lonely: 1 } },
         ]
     },
     {
-        text: "It's your day off. What are you doing?",
+        text: "Your AI agent just hallucinated a fake API. How do you react?",
         answers: [
-            { label: "Training!",                       scores: { hardy: 2, brave: 1 } },
-            { label: "Reading up on dungeon tactics.",  scores: { bold: 2, calm: 1 } },
-            { label: "Hanging with friends at the cafe.", scores: { jolly: 2, quirky: 1 } },
-            { label: "Staying in. Alone time is important.", scores: { lonely: 2, timid: 1 } },
+            { label: "Laugh it off and fix it.",         scores: { jolly: 2, quirky: 1 } },
+            { label: "Add validation. This won't happen again.", scores: { bold: 2, calm: 1 } },
+            { label: "Rant about it on social media.",   scores: { sassy: 2, brave: 1 } },
+            { label: "Quietly question the future of AI.", scores: { lonely: 2, timid: 1 } },
         ]
     },
     {
-        text: "A younger recruit asks you for life advice. You say...",
+        text: "What's your stance on tabs vs spaces?",
         answers: [
-            { label: "\"Never back down. Ever.\"",      scores: { brave: 2, hardy: 1 } },
-            { label: "\"Think before you act.\"",       scores: { calm: 2, bold: 1 } },
-            { label: "\"Don't take anything too seriously.\"", scores: { quirky: 2, sassy: 1 } },
-            { label: "\"Trust yourself, even when no one else does.\"", scores: { lonely: 2, timid: 1 } },
+            { label: "Spaces. Always. Fight me.",        scores: { hardy: 2, brave: 1 } },
+            { label: "Tabs. More accessible, objectively better.", scores: { bold: 2, sassy: 1 } },
+            { label: "Whatever the formatter says.",     scores: { calm: 2, jolly: 1 } },
+            { label: "I have opinions but I keep them to myself.", scores: { timid: 2, lonely: 1 } },
         ]
     },
     {
-        text: "You discover a secret passage in the guild. What now?",
+        text: "A junior dev pushes directly to main. You...",
         answers: [
-            { label: "Explore it alone. Right now.",    scores: { brave: 2, lonely: 1 } },
-            { label: "Report it to the Guildmaster.",   scores: { bold: 2, calm: 1 } },
-            { label: "Explore it... but bring snacks.", scores: { jolly: 1, quirky: 2 } },
-            { label: "Pretend you didn't see it.",      scores: { timid: 2, sassy: 1 } },
+            { label: "Revert it immediately. No mercy.", scores: { hardy: 2, bold: 1 } },
+            { label: "Teach them about branch protection.", scores: { calm: 2, brave: 1 } },
+            { label: "We've all been there. Help them fix it.", scores: { jolly: 2, calm: 1 } },
+            { label: "Quietly set up branch rules so it never happens again.", scores: { lonely: 2, timid: 1 } },
         ]
     },
     {
-        text: "What's most important in a rescue team?",
+        text: "Pick a side project vibe:",
         answers: [
-            { label: "Raw strength.",                   scores: { hardy: 2, brave: 1 } },
-            { label: "Strategy and planning.",          scores: { bold: 2, calm: 1 } },
-            { label: "Team chemistry.",                 scores: { jolly: 2, calm: 1 } },
-            { label: "Unpredictability.",               scores: { quirky: 2, sassy: 1 } },
+            { label: "Building my own game engine from scratch.", scores: { brave: 2, hardy: 1 } },
+            { label: "A perfectly architected REST API that nobody will use.", scores: { bold: 2, calm: 1 } },
+            { label: "A Discord bot that posts memes.", scores: { quirky: 2, sassy: 1 } },
+            { label: "Contributing to open source, quietly.", scores: { lonely: 2, timid: 1 } },
         ]
     },
 ];
