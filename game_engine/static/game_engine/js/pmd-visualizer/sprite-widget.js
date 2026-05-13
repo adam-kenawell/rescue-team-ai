@@ -2,6 +2,7 @@
 import { spriteUrl, loadImage, fetchAnimData, calcFrameInfo } from './sprites.js';
 const ACTIONS = ['Walk', 'Idle', 'Attack', 'Sleep'];
 export const FRAME_MS = 150;
+const ATTACK_FRAME_MS = 80;
 export const SCALE = 2;
 let activeWidgets = [];
 let animRunning = false;
@@ -25,30 +26,38 @@ export function startAnimLoop() {
     if (animRunning)
         return;
     animRunning = true;
-    let last = 0;
+    let lastIdle = 0;
+    let lastAttack = 0;
     function loop(ts) {
         if (activeWidgets.length === 0) {
             animRunning = false;
             return;
         }
         const now = performance.now();
-        if (ts - last >= FRAME_MS) {
-            last = ts;
-            for (const w of activeWidgets) {
-                const action = w.state === 'attacking' ? 'Attack' : 'Idle';
-                const sheet = w.sheets[action] || w.sheets.Idle || w.sheets.Walk;
-                const info = w.frameInfo[action] || w.frameInfo.Idle || w.frameInfo.Walk;
-                if (!sheet || !info)
-                    continue;
-                const frameIdx = w.frame % info.count;
-                w.ctx.clearRect(0, 0, w.canvas.width, w.canvas.height);
-                w.ctx.imageSmoothingEnabled = false;
-                w.ctx.drawImage(sheet, frameIdx * info.w, w.direction * info.h, info.w, info.h, 0, 0, info.w * SCALE, info.h * SCALE);
-                w.frame++;
-                if (w.state === 'attacking' && now > w.stateEnd) {
-                    w.state = 'idle';
-                    w.frame = 0;
-                }
+        const idleReady = ts - lastIdle >= FRAME_MS;
+        const attackReady = ts - lastAttack >= ATTACK_FRAME_MS;
+        if (idleReady) lastIdle = ts;
+        if (attackReady) lastAttack = ts;
+        for (const w of activeWidgets) {
+            const action = w.state === 'attacking' ? 'Attack' : 'Idle';
+            const isAttack = action === 'Attack';
+            if (isAttack && !attackReady) continue;
+            if (!isAttack && !idleReady) continue;
+            const sheet = w.sheets[action] || w.sheets.Idle || w.sheets.Walk;
+            const info = w.frameInfo[action] || w.frameInfo.Idle || w.frameInfo.Walk;
+            if (!sheet || !info)
+                continue;
+            const frameIdx = w.frame % info.count;
+            w.ctx.clearRect(0, 0, w.canvas.width, w.canvas.height);
+            w.ctx.imageSmoothingEnabled = false;
+            // Draw centered on fixed-size canvas
+            const dx = Math.floor((w.canvas.width - info.w * SCALE) / 2);
+            const dy = Math.floor((w.canvas.height - info.h * SCALE) / 2);
+            w.ctx.drawImage(sheet, frameIdx * info.w, w.direction * info.h, info.w, info.h, dx, dy, info.w * SCALE, info.h * SCALE);
+            w.frame++;
+            if (w.state === 'attacking' && now > w.stateEnd) {
+                w.state = 'idle';
+                w.frame = 0;
             }
         }
         requestAnimationFrame(loop);
@@ -75,9 +84,17 @@ export async function createSpriteWidget(dexId) {
         Sleep: sleepImg ? calcFrameInfo(sleepImg, animDims['Sleep']) : null,
     };
     const info = frameInfo.Idle || frameInfo.Walk;
+    // Size canvas to the largest frame across all actions so it never resizes
+    let maxW = 0, maxH = 0;
+    for (const fi of Object.values(frameInfo)) {
+        if (fi) {
+            maxW = Math.max(maxW, fi.w);
+            maxH = Math.max(maxH, fi.h);
+        }
+    }
     const canvas = document.createElement('canvas');
-    canvas.width = info.w * SCALE;
-    canvas.height = info.h * SCALE;
+    canvas.width = maxW * SCALE;
+    canvas.height = maxH * SCALE;
     canvas.className = 'poke-sprite-canvas';
     const ctx = canvas.getContext('2d');
     const widget = {
