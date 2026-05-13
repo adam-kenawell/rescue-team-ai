@@ -118,3 +118,31 @@
     background: #4a4a6c;
     border-color: #7a7a9c;
 }
+
+/* -- Chat text input -- */
+.chat-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    background: #2a2a4a;
+    border: 1px solid #5a5a7c;
+    border-radius: 4px;
+    color: #e0e0e0;
+    padding: 0.4rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.chat-input:focus {
+    border-color: #7a7a9c;
+}
+
+.chat-input::placeholder {
+    color: #6a6a8a;
+}
