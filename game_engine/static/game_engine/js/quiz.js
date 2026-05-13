@@ -21,9 +21,6 @@ const spriteDisplay = document.getElementById('sprite-display');
 let pokemonChoices = [];
 let leaderChoice = null;
 let partnerChoice = null;
-let leaderNickname = '';
-let partnerNickname = '';
-let teamName = '';
 let personalityScores = {};
 
 // -------------------------------------------------------
@@ -204,7 +201,7 @@ async function stepRevealLeader() {
                 clearSpriteGrid();
                 spriteDisplay.innerHTML = '';
                 resetWidgets();
-                stepNameLeader();
+                stepConfirmLeader();
             }},
             { label: "Actually, let me choose myself.", action: () => {
                 spriteDisplay.innerHTML = '';
@@ -220,24 +217,13 @@ async function stepManualPickLeader() {
     await showSpriteGrid(pokemonChoices, (p) => {
         leaderChoice = p;
         clearSpriteGrid();
-        stepNameLeader();
+        stepConfirmLeader();
     });
-}
-
-function stepNameLeader() {
-    showDialogueWithInput(
-        `Great choice! What will you name your ${leaderChoice.name}?`,
-        leaderChoice.name,
-        (name) => {
-            leaderNickname = name || leaderChoice.name;
-            stepConfirmLeader();
-        }
-    );
 }
 
 function stepConfirmLeader() {
     showDialogue(
-        `${leaderNickname} the ${leaderChoice.name}! Now, every leader needs a partner...`,
+        `${leaderChoice.name}, huh? A fine choice! Now, every leader needs a partner...`,
         [{ label: "Pick my partner!", action: stepPickPartner }]
     );
 }
@@ -252,36 +238,15 @@ async function stepPickPartner() {
     await showSpriteGrid(available, (p) => {
         partnerChoice = p;
         clearSpriteGrid();
-        stepNamePartner();
+        stepConfirmPartner();
     });
-}
-
-function stepNamePartner() {
-    showDialogueWithInput(
-        `Excellent! What will you name your ${partnerChoice.name}?`,
-        partnerChoice.name,
-        (name) => {
-            partnerNickname = name || partnerChoice.name;
-            stepConfirmPartner();
-        }
-    );
 }
 
 function stepConfirmPartner() {
     showDialogue(
-        `${leaderNickname} the ${leaderChoice.name} and ${partnerNickname} the ${partnerChoice.name} -- now THAT'S a duo!`,
-        [{ label: "Almost there!", action: stepNameTeam }]
-    );
-}
-
-function stepNameTeam() {
-    showDialogueWithInput(
-        "One last thing -- every rescue team needs a name. What will yours be?",
-        "Team Awesome",
-        (name) => {
-            teamName = name || "Team Awesome";
-            stepSpawnSprites();
-        }
+        `${leaderChoice.name} and ${partnerChoice.name} -- now THAT'S a rescue team! ` +
+        "Let me introduce you to the guild...",
+        [{ label: "Let's go!", action: stepSpawnSprites }]
     );
 }
 
@@ -309,7 +274,7 @@ async function stepSpawnSprites() {
     }
 
     showDialogue(
-        `${teamName} is ready for action! ${leaderNickname} and ${partnerNickname} reporting for duty! ` +
+        `${leaderChoice.name} and ${partnerChoice.name} are ready for action! ` +
         "Click on a sprite to see them attack!",
         [{ label: "Start over", action: resetQuiz }]
     );
@@ -318,9 +283,6 @@ async function stepSpawnSprites() {
 function resetQuiz() {
     leaderChoice = null;
     partnerChoice = null;
-    leaderNickname = '';
-    partnerNickname = '';
-    teamName = '';
     spriteDisplay.innerHTML = '';
     resetWidgets();
     stepWelcome();
@@ -379,37 +341,6 @@ function showDialogue(text, options) {
         btn.addEventListener('click', opt.action);
         chatOptions.appendChild(btn);
     }
-}
-
-function showDialogueWithInput(text, placeholder, onSubmit) {
-    chatText.textContent = text;
-    chatOptions.innerHTML = '';
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'chat-input-wrapper';
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'chat-input';
-    input.placeholder = placeholder;
-    input.maxLength = 24;
-
-    const btn = document.createElement('button');
-    btn.className = 'chat-option';
-    btn.textContent = 'Confirm';
-
-    const submit = () => onSubmit(input.value.trim());
-    btn.addEventListener('click', submit);
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') submit();
-    });
-
-    wrapper.appendChild(input);
-    wrapper.appendChild(btn);
-    chatOptions.appendChild(wrapper);
-
-    // Auto-focus the input
-    requestAnimationFrame(() => input.focus());
 }
 
 // -------------------------------------------------------
