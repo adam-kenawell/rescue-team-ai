@@ -1,4 +1,16 @@
 /* Base styles for Rescue Team AI */
+:root {
+    --bg: #1a1a1a;
+    --bg-card: rgba(26, 26, 26, 0.9);
+    --text: rgba(255, 255, 255, 0.85);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-faint: rgba(255, 255, 255, 0.35);
+    --accent-rgb: 255, 255, 255;
+    --accent: rgb(var(--accent-rgb));
+    --border: rgba(255, 255, 255, 0.2);
+    --border-hover: rgba(255, 255, 255, 0.5);
+}
+
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -9,9 +21,10 @@ html, body {
     height: 100%;
     width: 100%;
     overflow: hidden;
-    background: #1a1a2e;
-    color: #e0e0e0;
+    background: var(--bg);
+    color: var(--accent);
     font-family: 'Courier New', monospace;
+    line-height: 1.8;
 }
 
 #game-container {
