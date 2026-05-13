@@ -63,8 +63,12 @@ function stepConfirmLeader() {
 }
 
 function stepPickPartner() {
-    // Filter out the leader so you can't pick the same one twice.
-    const available = pokemonChoices.filter(p => p.dex_id !== leaderChoice.dex_id);
+    // Filter out leader AND any Pokemon that shares a type with the leader.
+    const leaderTypes = new Set(leaderChoice.types);
+    const available = pokemonChoices.filter(p =>
+        p.dex_id !== leaderChoice.dex_id &&
+        !p.types.some(t => leaderTypes.has(t))
+    );
     showDialogue(
         "Who will be your trusted partner on these rescue missions?",
         available.map(p => ({
@@ -93,26 +97,18 @@ async function stepSpawnSprites() {
     // Spawn leader
     const leaderSlot = document.createElement('div');
     leaderSlot.className = 'sprite-slot';
-    const leaderLabel = document.createElement('span');
-    leaderLabel.className = 'sprite-label';
-    leaderLabel.textContent = `Leader: ${leaderChoice.name}`;
     const leaderCanvas = await createSpriteWidget(leaderChoice.dex_id);
     if (leaderCanvas) {
         leaderSlot.appendChild(leaderCanvas);
-        leaderSlot.appendChild(leaderLabel);
         spriteDisplay.appendChild(leaderSlot);
     }
 
     // Spawn partner
     const partnerSlot = document.createElement('div');
     partnerSlot.className = 'sprite-slot';
-    const partnerLabel = document.createElement('span');
-    partnerLabel.className = 'sprite-label';
-    partnerLabel.textContent = `Partner: ${partnerChoice.name}`;
     const partnerCanvas = await createSpriteWidget(partnerChoice.dex_id);
     if (partnerCanvas) {
         partnerSlot.appendChild(partnerCanvas);
-        partnerSlot.appendChild(partnerLabel);
         spriteDisplay.appendChild(partnerSlot);
     }
 

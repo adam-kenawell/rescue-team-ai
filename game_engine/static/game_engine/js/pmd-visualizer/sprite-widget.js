@@ -1,7 +1,7 @@
 // Animated sprite widget for PMD sprites
 import { spriteUrl, loadImage, fetchAnimData, calcFrameInfo } from './sprites.js';
 const ACTIONS = ['Walk', 'Idle', 'Attack', 'Sleep'];
-export const FRAME_MS = 150;
+export const FRAME_MS = 80;
 export const SCALE = 2;
 let activeWidgets = [];
 let animRunning = false;

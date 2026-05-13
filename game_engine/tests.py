@@ -45,6 +45,8 @@ class OnboardingQuizViewTests(TestCase):
         for choice in choices:
             self.assertIn("name", choice)
             self.assertIn("dex_id", choice)
+            self.assertIn("types", choice)
+            self.assertIsInstance(choice["types"], list)
 
     # -- Static assets --
 
