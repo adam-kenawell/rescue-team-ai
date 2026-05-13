@@ -29,7 +29,7 @@ STARTER_POKEMON = [
     {"name": "Togepi", "dex_id": 175, "types": ["fairy"]},
     {"name": "Mareep", "dex_id": 179, "types": ["electric"]},
     {"name": "Porygon", "dex_id": 137, "types": ["normal"]},
-    {"name": "Magneton", "dex_id": 82, "types": ["electric", "steel"]},
+    {"name": "Magnemite", "dex_id": 82, "types": ["electric", "steel"]},
     {"name": "Igglybuff", "dex_id": 174, "types": ["normal", "fairy"]},
 ]
 
