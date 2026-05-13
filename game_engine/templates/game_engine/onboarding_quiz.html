@@ -1,0 +1,29 @@
+{% extends "game_engine/base.html" %}
+{% load static %}
+
+{% block title %}Rescue Team AI - Onboarding{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'game_engine/css/quiz.css' %}">
+{% endblock %}
+
+{% block content %}
+<div id="scene" class="scene">
+    <!-- Sprite display area: leader and partner render here after quiz -->
+    <div id="sprite-display"></div>
+
+    <!-- Chat bubble overlay for NPC dialogue -->
+    <div id="chat-bubble">
+        <div id="chat-text"></div>
+        <div id="chat-options"></div>
+    </div>
+</div>
+
+<!-- Pokemon choices data contract (consumed by quiz.js) -->
+{{ pokemon_choices|json_script:"pokemon-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="{% static 'game_engine/js/pmd-visualizer/index.js' %}"></script>
+<script type="module" src="{% static 'game_engine/js/quiz.js' %}"></script>
+{% endblock %}
