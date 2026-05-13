@@ -7,6 +7,7 @@
  */
 import {
     createSpriteWidget,
+    resetWidgets,
     nameToDexId,
 } from './pmd-visualizer/index.js';
 
@@ -42,46 +43,37 @@ function stepWelcome() {
     );
 }
 
-function stepPickLeader() {
-    showDialogue(
-        "First things first -- which Pokemon will lead your rescue team?",
-        pokemonChoices.map(p => ({
-            label: p.name,
-            action: () => {
-                leaderChoice = p;
-                stepConfirmLeader();
-            }
-        }))
-    );
+async function stepPickLeader() {
+    showDialogue("First things first -- which Pokemon will lead your rescue team?", []);
+    await showSpriteGrid(pokemonChoices, (p) => {
+        leaderChoice = p;
+        stepConfirmLeader();
+    });
 }
 
 function stepConfirmLeader() {
+    clearSpriteGrid();
     showDialogue(
         `${leaderChoice.name}, huh? A fine choice! Now, every leader needs a partner...`,
         [{ label: "Pick my partner!", action: stepPickPartner }]
     );
 }
 
-function stepPickPartner() {
-    // Filter out leader AND any Pokemon that shares a type with the leader.
+async function stepPickPartner() {
     const leaderTypes = new Set(leaderChoice.types);
     const available = pokemonChoices.filter(p =>
         p.dex_id !== leaderChoice.dex_id &&
         !p.types.some(t => leaderTypes.has(t))
     );
-    showDialogue(
-        "Who will be your trusted partner on these rescue missions?",
-        available.map(p => ({
-            label: p.name,
-            action: () => {
-                partnerChoice = p;
-                stepConfirmPartner();
-            }
-        }))
-    );
+    showDialogue("Who will be your trusted partner on these rescue missions?", []);
+    await showSpriteGrid(available, (p) => {
+        partnerChoice = p;
+        stepConfirmPartner();
+    });
 }
 
 function stepConfirmPartner() {
+    clearSpriteGrid();
     showDialogue(
         `${leaderChoice.name} and ${partnerChoice.name} -- now THAT'S a rescue team! ` +
         "Let me introduce you to the guild...",
@@ -123,7 +115,47 @@ function resetQuiz() {
     leaderChoice = null;
     partnerChoice = null;
     spriteDisplay.innerHTML = '';
+    resetWidgets();
     stepWelcome();
+}
+
+// -------------------------------------------------------
+// Sprite selection grid
+// -------------------------------------------------------
+
+async function showSpriteGrid(choices, onSelect) {
+    clearSpriteGrid();
+    const grid = document.createElement('div');
+    grid.className = 'sprite-grid';
+    spriteDisplay.appendChild(grid);
+
+    // Load all sprites in parallel
+    const entries = await Promise.all(choices.map(async (p) => {
+        const canvas = await createSpriteWidget(p.dex_id);
+        return { pokemon: p, canvas };
+    }));
+
+    for (const { pokemon, canvas } of entries) {
+        if (!canvas) continue;
+        const cell = document.createElement('div');
+        cell.className = 'sprite-grid-cell';
+        cell.title = pokemon.name;
+
+        const label = document.createElement('span');
+        label.className = 'sprite-grid-label';
+        label.textContent = pokemon.name;
+
+        cell.appendChild(canvas);
+        cell.appendChild(label);
+        cell.addEventListener('click', () => onSelect(pokemon));
+        grid.appendChild(cell);
+    }
+}
+
+function clearSpriteGrid() {
+    const existing = spriteDisplay.querySelector('.sprite-grid');
+    if (existing) existing.remove();
+    resetWidgets();
 }
 
 // -------------------------------------------------------
