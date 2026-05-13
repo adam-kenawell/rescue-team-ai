@@ -40,6 +40,11 @@ export function startAnimLoop() {
                 const info = w.frameInfo[action] || w.frameInfo.Idle || w.frameInfo.Walk;
                 if (!sheet || !info)
                     continue;
+                // Resize canvas to match current action's frame dimensions
+                if (w.canvas.width !== info.w * SCALE || w.canvas.height !== info.h * SCALE) {
+                    w.canvas.width = info.w * SCALE;
+                    w.canvas.height = info.h * SCALE;
+                }
                 const frameIdx = w.frame % info.count;
                 w.ctx.clearRect(0, 0, w.canvas.width, w.canvas.height);
                 w.ctx.imageSmoothingEnabled = false;
