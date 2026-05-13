@@ -1,0 +1,85 @@
+/* Onboarding quiz styles */
+.scene {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #2d2d4e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* -- Sprite display -- */
+#sprite-display {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+#sprite-display .sprite-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#sprite-display .sprite-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #a0a0c0;
+}
+
+#sprite-display canvas {
+    image-rendering: pixelated;
+}
+
+/* -- Chat bubble -- */
+#chat-bubble {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90%, 600px);
+    background: rgba(20, 20, 40, 0.92);
+    border: 2px solid #4a4a6a;
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+#chat-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    min-height: 2.5em;
+}
+
+#chat-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#chat-options .chat-option {
+    background: #3a3a5c;
+    border: 1px solid #5a5a7c;
+    border-radius: 4px;
+    color: #e0e0e0;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+#chat-options .chat-option:hover {
+    background: #4a4a6c;
+    border-color: #7a7a9c;
+}
