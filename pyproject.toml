@@ -1,0 +1,16 @@
+[project]
+name = "rescue-team-ai"
+version = "0.1.0"
+description = "A gamified web app where developers manage AI agents to refactor GitHub repos."
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6.0.4",
+    "psycopg[binary]>=3.2.12",
+    "pydantic-ai>=1.94.0",
+    "celery>=5.5.3",
+    "redis>=7.1.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
