@@ -201,6 +201,7 @@ async function stepRevealLeader() {
         [
             { label: `I'll go with ${assignedPokemon.name}!`, action: () => {
                 leaderChoice = assignedPokemon;
+                localStorage.setItem('rtai_leader_dex_id', String(assignedPokemon.dex_id));
                 clearSpriteGrid();
                 spriteDisplay.innerHTML = '';
                 resetWidgets();
@@ -219,6 +220,7 @@ async function stepManualPickLeader() {
     showDialogue("No problem! Pick whoever speaks to you.", []);
     await showSpriteGrid(pokemonChoices, (p) => {
         leaderChoice = p;
+        localStorage.setItem('rtai_leader_dex_id', String(p.dex_id));
         clearSpriteGrid();
         stepNameLeader();
     });

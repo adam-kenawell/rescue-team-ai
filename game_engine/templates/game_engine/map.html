@@ -1,0 +1,19 @@
+{% extends "game_engine/base.html" %}
+{% load static %}
+
+{% block title %}Rescue Team AI — Town Map{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'game_engine/css/map.css' %}">
+{% endblock %}
+
+{% block content %}
+<div id="map-wrapper">
+    <canvas id="map-canvas"></canvas>
+    <div id="fade-overlay"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="{% static 'game_engine/js/map.js' %}"></script>
+{% endblock %}

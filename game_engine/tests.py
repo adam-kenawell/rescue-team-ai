@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse, resolve
 
-from game_engine.views import OnboardingQuizView
+from game_engine.views import OnboardingQuizView, MapView
 
 
 class OnboardingQuizViewTests(TestCase):
@@ -69,3 +69,51 @@ class OnboardingQuizViewTests(TestCase):
     def test_page_has_sprite_display_area(self):
         response = self.client.get(self.url)
         self.assertContains(response, 'id="sprite-display"')
+
+
+class MapViewTests(TestCase):
+    """Tests for the CP3 town map page."""
+
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse("game_engine:map")
+
+    # -- Routing --
+
+    def test_url_resolves_to_correct_view(self):
+        match = resolve("/game/map/")
+        self.assertEqual(match.func.view_class, MapView)
+
+    # -- GET --
+
+    def test_get_returns_200(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_uses_correct_template(self):
+        response = self.client.get(self.url)
+        self.assertTemplateUsed(response, "game_engine/map.html")
+
+    def test_extends_base_template(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "<!DOCTYPE html>")
+
+    # -- Static assets --
+
+    def test_page_loads_map_module(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "map.js")
+
+    def test_page_loads_map_css(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "map.css")
+
+    # -- Canvas element --
+
+    def test_page_has_map_canvas(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="map-canvas"')
+
+    def test_page_has_fade_overlay(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="fade-overlay"')
