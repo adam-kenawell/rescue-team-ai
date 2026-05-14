@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.git/
+.gitignore
+*.md
+*.sqlite3
+node_modules/
+rescue_team_ai.egg-info/
+.env
+.env.*
