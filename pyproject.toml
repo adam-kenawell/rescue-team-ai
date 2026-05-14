@@ -9,6 +9,7 @@ dependencies = [
     "pydantic-ai>=1.94.0",
     "celery>=5.5.3",
     "redis>=7.1.0",
+    "whitenoise>=6.9.0",
 ]
 
 [build-system]
