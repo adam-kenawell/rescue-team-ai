@@ -43,3 +43,9 @@ class OnboardingQuizView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["pokemon_choices"] = STARTER_POKEMON
         return context
+
+
+class MapView(TemplateView):
+    """Serves the town map page with canvas-based tile rendering."""
+
+    template_name = "game_engine/map.html"
