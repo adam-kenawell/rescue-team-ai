@@ -1,0 +1,14 @@
+services:
+  web:
+    image: ghcr.io/adam-kenawell/rescue-team-ai:latest
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - static_files:/app/staticfiles
+    restart: unless-stopped
+
+volumes:
+  static_files:
