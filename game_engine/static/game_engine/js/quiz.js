@@ -313,7 +313,10 @@ async function stepSpawnSprites() {
     showDialogue(
         `${teamName} is ready for action! ${leaderNickname} and ${partnerNickname} reporting for duty! ` +
         "Click on a sprite to see them attack!",
-        [{ label: "Start over", action: resetQuiz }]
+        [
+            { label: "Head to town!", action: () => { window.location.href = '/game/map/'; } },
+            { label: "Start over", action: resetQuiz },
+        ]
     );
 }
 
