@@ -7,11 +7,25 @@ from django.contrib.auth import login, logout
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
+from django.views.generic import TemplateView
 
 from users_auth.models import User
 
 
-class GitHubLoginView(View):
+class LoginPageView(TemplateView):
+    """Renders the login page with the 'Sign in with GitHub' button."""
+
+    template_name = "users_auth/login.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if hasattr(request.user, "player_profile"):
+                return redirect("game_engine:map")
+            return redirect("game_engine:onboarding_quiz")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class GitHubRedirectView(View):
     """Redirects the user to GitHub's OAuth authorization page."""
 
     def get(self, request):

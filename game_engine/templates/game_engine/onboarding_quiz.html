@@ -21,6 +21,9 @@
 
 <!-- Pokemon choices data contract (consumed by quiz.js) -->
 {{ pokemon_choices|json_script:"pokemon-data" }}
+
+<!-- CSRF token for profile creation POST -->
+{% csrf_token %}
 {% endblock %}
 
 {% block extra_js %}

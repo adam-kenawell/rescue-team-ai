@@ -314,10 +314,44 @@ async function stepSpawnSprites() {
         `${teamName} is ready for action! ${leaderNickname} and ${partnerNickname} reporting for duty! ` +
         "Click on a sprite to see them attack!",
         [
-            { label: "Head to town!", action: () => { window.location.href = '/game/map/'; } },
+            { label: "Head to town!", action: saveProfileAndEnterMap },
             { label: "Start over", action: resetQuiz },
         ]
     );
+}
+
+/**
+ * POST the player's choices to the server to create their profile,
+ * then redirect to the map. Falls back to map redirect on error
+ * so the user isn't stuck.
+ */
+async function saveProfileAndEnterMap() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+    try {
+        const response = await fetch('/game/api/profile/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                team_name: teamName,
+                starter_pokemon: leaderChoice.name,
+                partner_pokemon: partnerChoice.name,
+                starter_nickname: leaderNickname !== leaderChoice.name ? leaderNickname : '',
+                partner_nickname: partnerNickname !== partnerChoice.name ? partnerNickname : '',
+            }),
+        });
+
+        if (!response.ok && response.status !== 409) {
+            console.error('Profile creation failed:', response.status);
+        }
+    } catch (err) {
+        console.error('Profile creation error:', err);
+    }
+
+    window.location.href = '/game/map/';
 }
 
 function resetQuiz() {
