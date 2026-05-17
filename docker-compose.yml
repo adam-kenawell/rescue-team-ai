@@ -8,7 +8,9 @@ services:
       - .env
     volumes:
       - static_files:/app/staticfiles
+      - sqlite_data:/app/data
     restart: unless-stopped
 
 volumes:
   static_files:
+  sqlite_data:
