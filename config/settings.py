@@ -126,3 +126,14 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Custom user model
+AUTH_USER_MODEL = 'users_auth.User'
+
+# GitHub OAuth
+GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', '')
+GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', '')
+GITHUB_OAUTH_SCOPES = 'read:user'
+
+# Auth URLs
+LOGIN_URL = '/auth/login/'
