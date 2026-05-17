@@ -28,6 +28,7 @@ COPY --from=base /usr/local/bin/gunicorn /usr/local/bin/gunicorn
 
 COPY . .
 
+RUN mkdir -p /app/data
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
