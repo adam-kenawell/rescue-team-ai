@@ -10,6 +10,7 @@ dependencies = [
     "celery>=5.5.3",
     "redis>=7.1.0",
     "whitenoise>=6.9.0",
+    "httpx>=0.28.0",
 ]
 
 [build-system]

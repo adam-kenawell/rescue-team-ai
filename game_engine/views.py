@@ -1,4 +1,12 @@
+import json
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from django.shortcuts import redirect
+from django.views import View
 from django.views.generic import TemplateView
+
+from game_engine.models import PlayerProfile
 
 
 # Mystery Dungeon starter Pokemon available for the onboarding quiz.
@@ -34,10 +42,16 @@ STARTER_POKEMON = [
 ]
 
 
-class OnboardingQuizView(TemplateView):
+class OnboardingQuizView(LoginRequiredMixin, TemplateView):
     """Serves the onboarding quiz page where players pick their leader and partner."""
 
     template_name = "game_engine/onboarding_quiz.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # If user already has a profile, skip the quiz
+        if request.user.is_authenticated and hasattr(request.user, "player_profile"):
+            return redirect("game_engine:map")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -45,7 +59,52 @@ class OnboardingQuizView(TemplateView):
         return context
 
 
-class MapView(TemplateView):
+class MapView(LoginRequiredMixin, TemplateView):
     """Serves the town map page with canvas-based tile rendering."""
 
     template_name = "game_engine/map.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # If user has no profile, redirect to quiz first
+        if request.user.is_authenticated and not hasattr(request.user, "player_profile"):
+            return redirect("game_engine:onboarding_quiz")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class CreateProfileView(LoginRequiredMixin, View):
+    """POST endpoint to create a PlayerProfile from quiz completion data."""
+
+    def post(self, request):
+        if hasattr(request.user, "player_profile"):
+            return JsonResponse({"error": "Profile already exists"}, status=409)
+
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        team_name = data.get("team_name", "").strip()
+        starter_pokemon = data.get("starter_pokemon", "").strip()
+        partner_pokemon = data.get("partner_pokemon", "").strip()
+
+        if not all([team_name, starter_pokemon, partner_pokemon]):
+            return JsonResponse(
+                {"error": "team_name, starter_pokemon, and partner_pokemon are required"},
+                status=400,
+            )
+
+        profile = PlayerProfile.objects.create(
+            user=request.user,
+            team_name=team_name,
+            starter_pokemon=starter_pokemon,
+            partner_pokemon=partner_pokemon,
+            starter_nickname=data.get("starter_nickname", "").strip(),
+            partner_nickname=data.get("partner_nickname", "").strip(),
+        )
+
+        return JsonResponse({
+            "id": profile.id,
+            "team_name": profile.team_name,
+            "starter_pokemon": profile.starter_pokemon,
+            "partner_pokemon": profile.partner_pokemon,
+        }, status=201)
