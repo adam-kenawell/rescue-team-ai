@@ -1,0 +1,71 @@
+{% extends "game_engine/base.html" %}
+{% load static %}
+
+{% block title %}Rescue Team AI - Sign In{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        color: #e0e0e0;
+    }
+    .login-title {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #ffcc00;
+    }
+    .login-subtitle {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        color: #aaa;
+    }
+    .github-login-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+        font-family: inherit;
+        color: #fff;
+        background-color: #24292f;
+        border: 2px solid #ffcc00;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+    .github-login-btn:hover {
+        background-color: #3a3f47;
+    }
+    .github-login-btn svg {
+        width: 24px;
+        height: 24px;
+        fill: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <h1 class="login-title">Rescue Team AI</h1>
+    <p class="login-subtitle">Sign in to begin your rescue mission.</p>
+    <a href="{% url 'users_auth:github_redirect' %}" class="github-login-btn">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+            0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+            -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2
+            -3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
+            .64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92
+            .08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0
+            1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        Sign in with GitHub
+    </a>
+</div>
+{% endblock %}

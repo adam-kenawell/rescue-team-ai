@@ -4,7 +4,12 @@ from django.test import Client, TestCase, override_settings
 from django.urls import resolve, reverse
 
 from users_auth.models import User
-from users_auth.views import GitHubCallbackView, GitHubLoginView, LogoutView
+from users_auth.views import (
+    GitHubCallbackView,
+    GitHubRedirectView,
+    LoginPageView,
+    LogoutView,
+)
 
 
 class UserModelTests(TestCase):
@@ -43,8 +48,8 @@ class UserModelTests(TestCase):
         self.assertEqual(str(user), "django_name")
 
 
-class GitHubLoginViewTests(TestCase):
-    """Tests for the GitHub OAuth redirect."""
+class LoginPageViewTests(TestCase):
+    """Tests for the login page."""
 
     def setUp(self):
         self.client = Client()
@@ -52,7 +57,42 @@ class GitHubLoginViewTests(TestCase):
 
     def test_url_resolves_to_correct_view(self):
         match = resolve("/auth/login/")
-        self.assertEqual(match.func.view_class, GitHubLoginView)
+        self.assertEqual(match.func.view_class, LoginPageView)
+
+    def test_anonymous_gets_login_page(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Sign in with GitHub")
+
+    def test_authenticated_user_with_profile_redirected_to_map(self):
+        from game_engine.models import PlayerProfile
+        user = User.objects.create_user(username="existing")
+        PlayerProfile.objects.create(
+            user=user, team_name="T", starter_pokemon="S", partner_pokemon="P",
+        )
+        self.client.force_login(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("map", response.url)
+
+    def test_authenticated_user_without_profile_redirected_to_quiz(self):
+        user = User.objects.create_user(username="newuser")
+        self.client.force_login(user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("onboarding", response.url)
+
+
+class GitHubRedirectViewTests(TestCase):
+    """Tests for the GitHub OAuth redirect."""
+
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse("users_auth:github_redirect")
+
+    def test_url_resolves_to_correct_view(self):
+        match = resolve("/auth/github/")
+        self.assertEqual(match.func.view_class, GitHubRedirectView)
 
     @override_settings(GITHUB_CLIENT_ID="test_id", GITHUB_OAUTH_SCOPES="read:user")
     def test_redirects_to_github(self):
